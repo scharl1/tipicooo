@@ -1,0 +1,38 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-tipicooo-dev-3bceb-authRole",
+      "UnauthRoleArn": "arn:aws:iam::636192784500:role/amplify-tipicooo-dev-3bceb-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::636192784500:role/amplify-tipicooo-dev-3bceb-authRole",
+      "Region": "eu-central-1",
+      "DeploymentBucketName": "amplify-tipicooo-dev-3bceb-deployment",
+      "UnauthRoleName": "amplify-tipicooo-dev-3bceb-unauthRole",
+      "StackName": "amplify-tipicooo-dev-3bceb",
+      "StackId": "arn:aws:cloudformation:eu-central-1:636192784500:stack/amplify-tipicooo-dev-3bceb/a3f96a00-dc33-11f0-8ac2-0aa493cb73e7",
+      "AmplifyAppId": "d2eta1rp0s691o"
+    },
+    "categories": {
+      "auth": {
+        "tipicooo4cc44a9a": {}
+      }
+    }
+  },
+  "milano": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-tipicooo-milano-3c60c-authRole",
+      "UnauthRoleArn": "arn:aws:iam::636192784500:role/amplify-tipicooo-milano-3c60c-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::636192784500:role/amplify-tipicooo-milano-3c60c-authRole",
+      "Region": "eu-central-1",
+      "DeploymentBucketName": "amplify-tipicooo-milano-3c60c-deployment",
+      "UnauthRoleName": "amplify-tipicooo-milano-3c60c-unauthRole",
+      "StackName": "amplify-tipicooo-milano-3c60c",
+      "StackId": "arn:aws:cloudformation:eu-central-1:636192784500:stack/amplify-tipicooo-milano-3c60c/154fd1f0-dc37-11f0-a5bb-0a7749dd4a81",
+      "AmplifyAppId": "d2eta1rp0s691o"
+    },
+    "categories": {
+      "auth": {
+        "tipicooo4cc44a9a": {}
+      }
+    }
+  }
+}
