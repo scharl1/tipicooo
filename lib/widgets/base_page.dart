@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_header.dart';
 import '../widgets/loader_widget.dart';
-import '../logiche/auth/auth_utils.dart';
 
 class BasePage extends StatelessWidget {
   final String headerTitle;
@@ -13,6 +12,9 @@ class BasePage extends StatelessWidget {
   final Widget body;
   final Widget? bottomNavigationBar;
   final bool isLoading;
+  final bool scrollable;
+
+  final VoidCallback? onLogout;
 
   const BasePage({
     super.key,
@@ -25,44 +27,33 @@ class BasePage extends StatelessWidget {
     required this.body,
     this.bottomNavigationBar,
     this.isLoading = false,
+    this.scrollable = true,
+    this.onLogout,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: FutureBuilder<bool>(
-          future: AuthUtils.isLoggedIn(),
-          builder: (context, snapshot) {
-            final loggedIn = snapshot.data ?? false;
-
-            return AppHeader(
-              title: headerTitle,
-              showBell: showBell,
-              showBack: showBack,
-              showHome: showHome,
-              showLogout: showLogout,
-              showProfile: showProfile || loggedIn,
-            );
-          },
-        ),
+      appBar: AppHeader(
+        title: headerTitle,
+        showBell: showBell,
+        showBack: showBack,
+        showHome: showHome,
+        showLogout: showLogout,
+        showProfile: showProfile,
+        onLogout: onLogout,
       ),
 
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  body,
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
+            // ⭐ FIX DEFINITIVO: niente Center, niente ScrollView quando non serve
+            scrollable
+                ? SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: body,
+                  )
+                : body,
 
             if (isLoading)
               const Positioned.fill(

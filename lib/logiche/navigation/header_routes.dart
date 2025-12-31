@@ -6,9 +6,9 @@ import 'app_routes.dart';
 /// Funzioni centralizzate per la navigazione dall'header.
 /// Tutti i pulsanti dell'AppBar usano queste funzioni.
 class HeaderRoutes {
-  /// Torna alla Home SENZA distruggere lo stack
+  /// Torna alla Home sostituendo la pagina corrente
   static void navigateToHome(BuildContext context) {
-    Navigator.pushNamed(context, AppRoutes.home);
+    Navigator.pushReplacementNamed(context, AppRoutes.home);
   }
 
   /// Apri la pagina notifiche

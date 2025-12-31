@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tipicooo/logiche/auth/registration.dart';
 import 'package:tipicooo/logiche/navigation/app_routes.dart';
-import 'package:tipicooo/widgets/AppTextField.dart';
+import 'package:tipicooo/widgets/apptextfield.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:tipicooo/widgets/base_page.dart';
+import 'package:tipicooo/theme/app_text_styles.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -13,12 +14,12 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController surnameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController repeatPasswordController = TextEditingController();
-  final TextEditingController otpController = TextEditingController();
+  final nameController = TextEditingController();
+  final surnameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final repeatPasswordController = TextEditingController();
+  final otpController = TextEditingController();
 
   bool isLoading = false;
   bool showOtpField = false;
@@ -36,7 +37,6 @@ class _SignupPageState extends State<SignupPage> {
     final password = passwordController.text.trim();
     final repeatPassword = repeatPasswordController.text.trim();
 
-    // VALIDAZIONI ELEGANTI
     if (name.isEmpty) return _showMessage("Inserisci il nome");
     if (surname.isEmpty) return _showMessage("Inserisci il cognome");
     if (!email.contains("@") || !email.contains(".")) return _showMessage("Email non valida");
@@ -61,7 +61,6 @@ class _SignupPageState extends State<SignupPage> {
     }
 
     setState(() => showOtpField = true);
-
     _showMessage("Codice inviato alla tua email.");
   }
 
@@ -97,54 +96,35 @@ class _SignupPageState extends State<SignupPage> {
       headerTitle: "Registrazione",
       showBack: true,
       showBell: false,
-      showHome: false,
+      showHome: true,
       showLogout: false,
+
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 20),
 
             if (!showOtpField) ...[
-              AppTextField(
-                controller: nameController,
-                label: "Nome",
-              ),
-
+              AppTextField(controller: nameController, label: "Nome"),
               const SizedBox(height: 20),
 
-              AppTextField(
-                controller: surnameController,
-                label: "Cognome",
-              ),
-
+              AppTextField(controller: surnameController, label: "Cognome"),
               const SizedBox(height: 20),
 
-              AppTextField(
-                controller: emailController,
-                label: "Email",
-              ),
-
+              AppTextField(controller: emailController, label: "Email"),
               const SizedBox(height: 20),
 
-              AppTextField(
-                controller: passwordController,
-                label: "Password",
-                obscure: true,
-              ),
-
+              AppTextField(controller: passwordController, label: "Password", obscure: true),
               const SizedBox(height: 20),
 
-              AppTextField(
-                controller: repeatPasswordController,
-                label: "Ripeti Password",
-                obscure: true,
-              ),
-
+              AppTextField(controller: repeatPasswordController, label: "Ripeti Password", obscure: true),
               const SizedBox(height: 30),
 
-              Center(
+              SizedBox(
+                width: double.infinity,
                 child: BlueNarrowButton(
                   label: isLoading ? "Attendere..." : "Registrati",
                   onPressed: isLoading ? () {} : _doSignup,
@@ -153,14 +133,11 @@ class _SignupPageState extends State<SignupPage> {
             ],
 
             if (showOtpField) ...[
-              AppTextField(
-                controller: otpController,
-                label: "Codice OTP",
-              ),
-
+              AppTextField(controller: otpController, label: "Codice OTP"),
               const SizedBox(height: 30),
 
-              Center(
+              SizedBox(
+                width: double.infinity,
                 child: BlueNarrowButton(
                   label: isLoading ? "Verifica..." : "Conferma Codice",
                   onPressed: isLoading ? () {} : _confirmOtp,
@@ -174,7 +151,10 @@ class _SignupPageState extends State<SignupPage> {
               onPressed: () {
                 Navigator.pushReplacementNamed(context, AppRoutes.login);
               },
-              child: const Text("Hai già un account? Accedi"),
+              child: const Text(
+                "Hai già un account? Accedi",
+                style: AppTextStyles.body,
+              ),
             ),
           ],
         ),

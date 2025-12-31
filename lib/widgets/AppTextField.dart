@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:tipicooo/theme/app_colors.dart';
 
-/// Campo di testo standard dell’app.
-/// Riutilizzabile ovunque per mantenere stile coerente.
+/// Campo di testo universale dell’app.
+/// Usato per mantenere stile, bordi e colori coerenti.
 class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final bool obscure;
-  final bool autofocus; // 👈 AGGIUNTO
+  final bool autofocus;
 
   const AppTextField({
     super.key,
     required this.controller,
     required this.label,
     this.obscure = false,
-    this.autofocus = false, // 👈 AGGIUNTO
+    this.autofocus = false,
   });
 
   @override
@@ -22,7 +22,7 @@ class AppTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscure,
-      autofocus: autofocus, // 👈 AGGIUNTO
+      autofocus: autofocus,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(

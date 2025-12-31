@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/base_page.dart';
 import '../widgets/app_bottom_nav.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/layout/app_body_layout.dart';
 
 class FavoritesPage extends StatelessWidget {
   const FavoritesPage({super.key});
@@ -10,19 +11,19 @@ class FavoritesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BasePage(
       headerTitle: 'Preferiti',
-      showBell: false,   // 🚫 niente campanella
-      showBack: false,    // ✅ freccia indietro
-      showHome: true,    // ✅ icona home
+      showBell: false,
+      showBack: false,
+      showHome: true,
       bottomNavigationBar: const AppBottomNav(currentIndex: 1),
-      body: const Center(
-        child: Text(
-          'Nessun preferito disponibile',
-          style: TextStyle(
-            color: AppColors.black,       // ✅ colore centralizzato
-            fontWeight: FontWeight.bold,  // ✅ grassetto
+
+      body: AppBodyLayout(
+        children: const [
+          Text(
+            'Nessun preferito disponibile',
+            style: AppTextStyles.pageMessage,
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
+        ],
       ),
     );
   }

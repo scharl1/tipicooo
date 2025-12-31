@@ -1,52 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/widgets/app_bottom_nav.dart';
-import 'package:tipicooo/theme/app_colors.dart'; // 👈 per usare i colori centralizzati
-import 'package:tipicooo/logiche/navigation/app_routes.dart'; // 👈 per la rotta TestPage
+import 'package:tipicooo/widgets/custom_buttons.dart';
+import 'package:tipicooo/theme/app_text_styles.dart';
+import 'package:tipicooo/logiche/navigation/app_routes.dart';
+import 'package:tipicooo/logiche/auth/auth_state.dart';
+import 'package:tipicooo/widgets/layout/app_body_layout.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BasePage(
-      headerTitle: "Tipic.ooo",
-      showBack: false,
-      showHome: false,
-      showBell: true,
-      bottomNavigationBar: const AppBottomNav(currentIndex: -1),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Benvenuto in Tipic.ooo, siamo in contiua evoluzione, se trovi Bug suggerisciceli, Grazie!",
-              style: TextStyle(
-                fontSize: 24,                // ✅ dimensione testo
-                fontWeight: FontWeight.bold, // ✅ grassetto
-                color: AppColors.black,      // ✅ colore centralizzato
+    return ValueListenableBuilder<bool>(
+      valueListenable: AuthState.isLoggedIn,
+      builder: (context, loggedIn, _) {
+        return BasePage(
+          headerTitle: "Tipic.ooo",
+          showBell: true,
+          showProfile: loggedIn,
+          bottomNavigationBar: AppBottomNav(currentIndex: 3),
+
+          body: AppBodyLayout(
+            children: [
+              const Text(
+                "Benvenuto in Tipic.ooo! Siamo in continua evoluzione.\nSe trovi bug, segnalaceli. Grazie!",
+                textAlign: TextAlign.center,
+                style: AppTextStyles.pageMessage,
               ),
-              textAlign: TextAlign.center,   // ✅ centrato
-            ),
-            const SizedBox(height: 20), // spazio tra testo e pulsante
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentYellow, // 👈 colore giallo dal tuo file
+
+              RoundedYellowButton(
+                label: "Vai al Test",
+                icon: Icons.arrow_forward,
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.testPage);
+                },
               ),
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.testPage); // 👈 naviga alla TestPage
-              },
-              child: const Text(
-                "Vai al Test",
-                style: TextStyle(
-                  color: AppColors.black, // 👈 testo nero dal tuo file
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

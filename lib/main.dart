@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+// Pagine
 import 'pages/profile_page.dart';
 import 'pages/users/signup_page.dart';
 import 'pages/users/login_page.dart';
@@ -8,15 +11,27 @@ import 'pages/favorites_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/test_page.dart';
 
+// Logiche
 import 'logiche/auth/auth_service.dart';
 import 'logiche/navigation/app_routes.dart';
+import 'logiche/auth/auth_gate.dart';
 
-// 👇 IMPORTANTE: AuthGate decide se mandare l’utente a HomePage o UserPage
-import 'pages/auth_gate.dart';
+// ⭐ NotificationController
+import 'logiche/notifications/notification_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AuthService.configure(); // inizializza Amplify/Cognito
+
+  // ⭐ Inizializza Hive
+  await Hive.initFlutter();
+  await Hive.openBox('notifications');
+
+  // ⭐ Carica notifiche salvate
+  await NotificationController.instance.init();
+
+  // ⭐ Inizializza Amplify/Cognito
+  await AuthService.configure();
+
   runApp(const MyApp());
 }
 
@@ -32,12 +47,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
 
-      // 👇 L'app parte dalla route iniziale
+      // ⭐ L'app parte da AuthGate
       initialRoute: AppRoutes.home,
 
-      // 👇 Tutte le rotte registrate
       routes: {
-        // AuthGate decide se mandare l’utente a HomePage o UserPage
         AppRoutes.home: (context) => const AuthGate(),
 
         // Pagine principali
@@ -49,9 +62,9 @@ class MyApp extends StatelessWidget {
         AppRoutes.favorites: (context) => const FavoritesPage(),
         AppRoutes.notifications: (context) => const NotificationsPage(),
 
-        // 👇 La TestPage ora funziona
+        // TestPage
         AppRoutes.testPage: (context) => const TestPage(),
       },
     );
   }
-} //test
+}

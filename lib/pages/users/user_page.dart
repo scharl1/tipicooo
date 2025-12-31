@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/logiche/auth/auth_delete_service.dart';
-import 'package:tipicooo/logiche/notifications/notification_state.dart';
 import 'package:tipicooo/logiche/navigation/app_routes.dart';
+
+// ⭐ Nuovo sistema notifiche
+import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+import 'package:tipicooo/logiche/notifications/app_notification.dart';
 
 import '../../widgets/base_page.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
+import 'package:tipicooo/widgets/layout/app_body_layout.dart';
+import 'package:tipicooo/widgets/app_bottom_nav.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -20,31 +26,10 @@ class _UserPageState extends State<UserPage> {
 
   final AuthDeleteService _deleteService = AuthDeleteService();
 
-  final labels = [
-    "Dashboard Ufficio",
-    "Lavora con noi",
-    "Accedi o registra un’attività o associazione",
-    "Accedi al Welfare Aziendale",
-    "Liberi professionisti",
-    "Dashboard Utente",
-    "Elimina Profilo", // 👈 resta nella lista
-  ];
-
-  static const double horizontalPadding = 40;
-  static const double verticalPadding = 28;
-
-  double maxWidth = 0;
-  double maxHeight = 0;
-
   @override
   void initState() {
     super.initState();
     _loadUserData();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculateMaxButtonSize(context);
-      setState(() {});
-    });
   }
 
   Future<void> _loadUserData() async {
@@ -60,26 +45,48 @@ class _UserPageState extends State<UserPage> {
     });
   }
 
-  // 🔥 MODALE + ELIMINAZIONE PROFILO
+  Future<void> _logout() async {
+    try {
+      await AuthService().logout();
+    } catch (e) {
+      debugPrint("Errore logout: $e");
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.home,
+      (route) => false,
+    );
+  }
+
   Future<void> _confirmDelete() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Elimina Profilo"),
+          title: const Text(
+            "Elimina Profilo",
+            style: AppTextStyles.body,
+          ),
           content: const Text(
             "Sei sicuro di voler eliminare definitivamente il tuo profilo?",
+            style: AppTextStyles.body,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Annulla"),
+              child: const Text(
+                "Annulla",
+                style: AppTextStyles.body,
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text(
+              child: Text(
                 "Elimina",
-                style: TextStyle(color: Colors.red),
+                style: AppTextStyles.body.copyWith(color: Colors.red),
               ),
             ),
           ],
@@ -89,7 +96,6 @@ class _UserPageState extends State<UserPage> {
 
     if (confirm != true) return;
 
-    // Loader
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -98,19 +104,21 @@ class _UserPageState extends State<UserPage> {
       ),
     );
 
-    // Elimina utente
     await _deleteService.deleteCurrentUser();
-
-    // Logout
     await _deleteService.logoutAfterDeletion();
 
-    // Attiva notifica
-    NotificationState.hasUnread.value = true;
+    // ⭐ NUOVO SISTEMA NOTIFICHE PROFESSIONALE
+    NotificationController.instance.addNotification(
+      AppNotification(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: 'Profilo eliminato',
+        message: 'Il tuo profilo è stato eliminato con successo.',
+        timestamp: DateTime.now(),
+      ),
+    );
 
-    // Chiudi loader
     Navigator.of(context).pop();
 
-    // Torna alla Home
     Navigator.of(context).pushNamedAndRemoveUntil(
       AppRoutes.home,
       (route) => false,
@@ -124,87 +132,37 @@ class _UserPageState extends State<UserPage> {
       headerTitle: 'Benvenuto',
       showHome: true,
       showLogout: true,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 30),
+      onLogout: _logout,
 
-            if (userName == null)
-              const CircularProgressIndicator()
-            else
-              Text(
-                userName!,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryBlue,
-                ),
-                textAlign: TextAlign.center,
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
+
+      body: AppBodyLayout(
+        children: [
+          if (userName == null) ...[
+            const CircularProgressIndicator(color: AppColors.primaryBlue),
+            const SizedBox(height: 20),
+            const Text(
+              "Caricamento...",
+              style: AppTextStyles.body,
+              textAlign: TextAlign.center,
+            ),
+          ] else ...[
+            Text(
+              userName!,
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: AppColors.primaryBlue,
               ),
-
-            const SizedBox(height: 40),
-
-            // Pulsanti principali
-            for (var label in labels) ...[
-              _buildCenteredButton(
-                label: label,
-                onPressed: () {
-                  if (label == "Elimina Profilo") {
-                    _confirmDelete(); // 👈 ora funziona
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            const SizedBox(height: 40),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
           ],
-        ),
-      ),
-    );
-  }
 
-  void _calculateMaxButtonSize(BuildContext context) {
-    double w = 0;
-    double h = 0;
-
-    final maxTextWidth = MediaQuery.of(context).size.width - 32;
-
-    for (var text in labels) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+          DangerButton(
+            label: "Elimina Profilo",
+            icon: Icons.delete_forever,
+            onPressed: _confirmDelete,
           ),
-        ),
-        textDirection: TextDirection.ltr,
-        maxLines: 3,
-      )..layout(maxWidth: maxTextWidth);
-
-      if (painter.width > w) w = painter.width;
-      if (painter.height > h) h = painter.height;
-    }
-
-    maxWidth = w + horizontalPadding;
-    maxHeight = h + verticalPadding;
-  }
-
-  Widget _buildCenteredButton({
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return Center(
-      child: SizedBox(
-        width: maxWidth,
-        height: maxHeight,
-        child: BlueNarrowButton(
-          label: label,
-          onPressed: onPressed,
-        ),
+        ],
       ),
     );
   }

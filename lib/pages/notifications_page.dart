@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/theme/app_colors.dart';
-import 'package:tipicooo/logiche/notifications/notification_state.dart';
+
+// ⭐ Nuovo sistema notifiche
+import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+import 'package:tipicooo/logiche/notifications/app_notification.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -15,68 +18,122 @@ class _NotificationsPageState extends State<NotificationsPage> {
   void initState() {
     super.initState();
 
-    // 👇 Quando apro la pagina notifiche, segno tutto come letto
-    NotificationState.hasUnread.value = false;
+    // ⭐ Segna tutte le notifiche come lette DOPO il build iniziale
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationController.instance.markAllAsRead();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Recupera eventuali argomenti passati dal Navigator
-    final args = ModalRoute.of(context)?.settings.arguments;
-
-    // Controlla se è stata eliminata l’utenza
-    final bool deleted = args is Map && args['deleted'] == true;
+    final notifications = NotificationController.instance.notifications;
 
     return BasePage(
       headerTitle: "Le tue notifiche",
       showBell: false,
       showBack: true,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      scrollable: false, // ⭐ OBBLIGATORIO PER EVITARE CRASH
 
-            // 🔔 Notifica eliminazione profilo
-            if (deleted)
-              Container(
-                padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.accentYellow.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.accentYellow),
+      body: notifications.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                "Non ci sono notifiche al momento.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.black,
                 ),
-                child: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 28),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Il tuo profilo è stato eliminato con successo.",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.black,
+              ),
+            )
+          : Column(
+              children: [
+                Expanded( // ⭐ FIX: ListView ha ora altezza valida
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final n = notifications[index];
+
+                      return Dismissible(
+                        key: ValueKey(n.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          color: Colors.red,
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                      ),
-                    ),
-                  ],
+                        onDismissed: (_) {
+                          NotificationController.instance.deleteNotification(n.id);
+                          setState(() {});
+                        },
+                        child: _buildNotificationTile(n),
+                      );
+                    },
+                  ),
                 ),
-              ),
-
-            // Placeholder per notifiche future
-            const Text(
-              "Non ci sono altre notifiche al momento.",
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.black,
-              ),
+              ],
             ),
-          ],
-        ),
+    );
+  }
+
+  Widget _buildNotificationTile(AppNotification n) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.accentYellow.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.accentYellow),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.notifications, color: AppColors.primaryBlue, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  n.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.black,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  n.message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _formatTimestamp(n.timestamp),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  String _formatTimestamp(DateTime ts) {
+    final now = DateTime.now();
+    final diff = now.difference(ts);
+
+    if (diff.inMinutes < 1) return "Adesso";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} min fa";
+    if (diff.inHours < 24) return "${diff.inHours} ore fa";
+    return "${ts.day}/${ts.month}/${ts.year}";
   }
 }

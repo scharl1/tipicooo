@@ -10,17 +10,23 @@ class BottomNavRoutes {
     int index,
     int currentIndex,
   ) async {
-    if (index == currentIndex) return;
+
+    // Permetti sempre la navigazione verso Cerca (index 0)
+    if (index == currentIndex && index != 0) return;
 
     switch (index) {
+
+      // 🔵 CERCA
       case 0:
         _safeNavigate(context, AppRoutes.search);
         break;
 
+      // 🔵 PREFERITI
       case 1:
         _safeNavigate(context, AppRoutes.favorites);
         break;
 
+      // 🔵 PROFILO
       case 2:
         final loggedIn = await AuthUtils.isLoggedIn();
 
@@ -32,12 +38,21 @@ class BottomNavRoutes {
         _safeNavigate(context, AppRoutes.profile);
         break;
 
+      // 🔵 HOME (nuovo index 3)
+      case 3:
+        _safeNavigate(context, AppRoutes.home);
+        break;
+
+      // 🔵 DEFAULT
       default:
         debugPrint("Indice bottom nav non riconosciuto: $index");
     }
   }
 
   static void _safeNavigate(BuildContext context, String routeName) {
+    // ⭐ Protezione contro async gaps
+    if (!context.mounted) return;
+
     try {
       Navigator.pushReplacementNamed(context, routeName);
     } catch (e) {

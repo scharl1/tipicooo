@@ -84,6 +84,16 @@ class AuthService {
     }
   }
 
+  // ⭐ LOGOUT NORMALE — USATO DALLA UI
+  Future<void> logout() async {
+    try {
+      await Amplify.Auth.signOut();
+    } on AuthException catch (e) {
+      debugPrint('Errore logout: ${e.message}');
+    }
+  }
+
+  // (rimane anche signOut, se ti serve internamente)
   Future<void> signOut() async {
     try {
       await Amplify.Auth.signOut();
@@ -132,6 +142,36 @@ class AuthService {
     } on AuthException catch (e) {
       debugPrint('Errore fetch role: ${e.message}');
       return null;
+    }
+  }
+
+  // ⭐ RECUPERO PASSWORD — INVIA CODICE
+  Future<bool> resetPassword(String email) async {
+    try {
+      await Amplify.Auth.resetPassword(username: email);
+      return true; // ⭐ Cognito ha inviato il codice
+    } on AuthException catch (e) {
+      debugPrint('Errore reset password: ${e.message}');
+      return false;
+    }
+  }
+
+  // ⭐ CONFERMA CODICE E IMPOSTA NUOVA PASSWORD
+  Future<bool> confirmResetPassword({
+    required String email,
+    required String newPassword,
+    required String confirmationCode,
+  }) async {
+    try {
+      await Amplify.Auth.confirmResetPassword(
+        username: email,
+        newPassword: newPassword,
+        confirmationCode: confirmationCode,
+      );
+      return true;
+    } on AuthException catch (e) {
+      debugPrint('Errore conferma reset password: ${e.message}');
+      return false;
     }
   }
 }

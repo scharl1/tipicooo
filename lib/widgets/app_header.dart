@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_icons.dart';
 import '../logiche/navigation/header_routes.dart';
-import '../logiche/notifications/notification_state.dart';
 
+// ⭐ Nuovo sistema notifiche
+import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+
+/// Header universale dell’app.
+/// Gestisce titolo, icone e navigazione in modo coerente.
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showBell;
@@ -11,6 +15,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool showHome;
   final bool showLogout;
   final bool showProfile;
+
+  // ⭐ Callback esterna per il logout
+  final VoidCallback? onLogout;
 
   const AppHeader({
     super.key,
@@ -20,6 +27,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     this.showHome = false,
     this.showLogout = false,
     this.showProfile = false,
+    this.onLogout,
   });
 
   @override
@@ -30,20 +38,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       automaticallyImplyLeading: false,
 
-      // 🔵 ICONA A SINISTRA (Back o Home)
-      leading: showBack
-          ? IconButton(
-              icon: const Icon(AppIcons.back, color: AppColors.white),
-              onPressed: () => Navigator.pop(context),
-            )
-          : showHome
-              ? IconButton(
-                  icon: const Icon(AppIcons.home, color: AppColors.white),
-                  onPressed: () => HeaderRoutes.navigateToHome(context),
-                )
-              : null,
+      leading: _buildLeftIcon(context),
 
-      // 🔵 TITOLO
       title: Text(
         title,
         style: const TextStyle(
@@ -52,50 +48,85 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
 
-      // 🔵 ICONE A DESTRA
-      actions: [
-        if (showProfile)
-          IconButton(
-            icon: const Icon(AppIcons.user, color: AppColors.white),
-            onPressed: () => HeaderRoutes.goToProfile(context),
-          ),
+      actions: _buildRightIcons(context),
+    );
+  }
 
-        if (showBell)
-          ValueListenableBuilder<bool>(
-            valueListenable: NotificationState.hasUnread,
-            builder: (context, hasUnread, _) {
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(AppIcons.bell, color: AppColors.white),
-                    onPressed: () => HeaderRoutes.goToNotifications(context),
-                  ),
+  /// Costruisce l’icona a sinistra (Back o Home)
+  Widget? _buildLeftIcon(BuildContext context) {
+    if (showBack) {
+      return IconButton(
+        icon: const Icon(AppIcons.back, color: AppColors.white),
+        onPressed: () => Navigator.pop(context),
+      );
+    }
 
-                  if (hasUnread)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+    if (showHome) {
+      return IconButton(
+        icon: const Icon(AppIcons.home, color: AppColors.white),
+        onPressed: () => HeaderRoutes.navigateToHome(context),
+      );
+    }
+
+    return null;
+  }
+
+  /// Costruisce le icone a destra (Profilo, Notifiche, Logout)
+  List<Widget> _buildRightIcons(BuildContext context) {
+    final List<Widget> icons = [];
+
+    if (showProfile) {
+      icons.add(
+        IconButton(
+          icon: const Icon(AppIcons.user, color: AppColors.white),
+          onPressed: () => HeaderRoutes.goToProfile(context),
+        ),
+      );
+    }
+
+    if (showBell) {
+      icons.add(
+        AnimatedBuilder(
+          animation: NotificationController.instance,
+          builder: (context, _) {
+            final hasUnread = NotificationController.instance.hasUnread;
+
+            return Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(AppIcons.bell, color: AppColors.white),
+                  onPressed: () => HeaderRoutes.goToNotifications(context),
+                ),
+                if (hasUnread)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                ],
-              );
-            },
-          ),
+                  ),
+              ],
+            );
+          },
+        ),
+      );
+    }
 
-        if (showLogout)
-          IconButton(
-            icon: const Icon(AppIcons.logout, color: AppColors.white),
-            onPressed: () => HeaderRoutes.logout(context),
-          ),
-      ],
-    );
+    if (showLogout) {
+      icons.add(
+        IconButton(
+          icon: const Icon(AppIcons.logout, color: AppColors.white),
+          onPressed: onLogout,
+        ),
+      );
+    }
+
+    return icons;
   }
 
   @override
