@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import '../auth/auth_utils.dart';
+import '../auth/auth_state.dart';
 import 'app_routes.dart';
 
 /// Funzioni centralizzate per la navigazione dall'header.
 /// Tutti i pulsanti dell'AppBar usano queste funzioni.
 class HeaderRoutes {
+
   /// Torna alla Home sostituendo la pagina corrente
   static void navigateToHome(BuildContext context) {
     Navigator.pushReplacementNamed(context, AppRoutes.home);
@@ -18,14 +19,19 @@ class HeaderRoutes {
 
   /// 🔵 Vai alla pagina utente SE loggato
   /// 🔵 Altrimenti vai alla pagina login (profile_page)
-  static Future<void> goToProfile(BuildContext context) async {
-    final loggedIn = await AuthUtils.isLoggedIn();
+  static void goToProfile(BuildContext context) {
+    final loggedIn = AuthState.isLoggedIn.value;
 
     if (loggedIn) {
       Navigator.pushNamed(context, AppRoutes.user);
     } else {
       Navigator.pushNamed(context, AppRoutes.profile);
     }
+  }
+
+  /// ⭐ Vai SEMPRE alla UserPage (solo per header da loggato)
+  static void goToUserPage(BuildContext context) {
+    Navigator.pushNamed(context, AppRoutes.user);
   }
 
   /// 🔥 LOGOUT REALE CON COGNITO + RIMOZIONE STACK
@@ -35,9 +41,6 @@ class HeaderRoutes {
       await Amplify.Auth.signOut(
         options: const SignOutOptions(globalSignOut: true),
       );
-
-      // Pulizia locale extra (a volte necessaria)
-      await Amplify.Auth.signOut();
 
       // Torna alla HOME e rimuove tutto lo stack
       Navigator.pushNamedAndRemoveUntil(

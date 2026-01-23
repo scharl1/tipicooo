@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tipicooo/logiche/auth/auth_controller.dart';
 import 'package:tipicooo/logiche/auth/auth_service.dart';
-import 'package:tipicooo/logiche/navigation/nav_routes.dart';
 import 'package:tipicooo/widgets/base_page.dart';
-import 'package:tipicooo/widgets/custom_buttons.dart';
-import 'package:tipicooo/widgets/apptextfield.dart';
-import 'package:tipicooo/theme/app_text_styles.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,256 +10,276 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final otpController = TextEditingController();
+  // CONTROLLER LOGIN
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  // Reset password fields
-  bool resetMode = false;
-  bool codeSent = false;
-  final resetCodeController = TextEditingController();
-  final newPasswordController = TextEditingController();
+  // CONTROLLER RECUPERO PASSWORD
+  final TextEditingController resetEmailController = TextEditingController();
+  final TextEditingController resetCodeController = TextEditingController();
+  final TextEditingController resetNewPasswordController = TextEditingController();
 
-  late AuthController auth;
+  bool isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    auth = AuthController(onUpdate: () => setState(() {}));
-  }
-
-  void _notify() => setState(() {});
-
-  Future<void> sendResetCode() async {
-    auth.isLoading = true;
-    _notify();
-
-    final ok = await AuthService().resetPassword(
-      emailController.text.trim(),
-    );
-
-    auth.isLoading = false;
-    codeSent = ok;
-    _notify();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok
-            ? "Codice inviato alla tua email"
-            : "Errore durante l'invio del codice"),
-      ),
-    );
-  }
-
-  Future<void> confirmReset() async {
-    auth.isLoading = true;
-    _notify();
-
-    final ok = await AuthService().confirmResetPassword(
-      email: emailController.text.trim(),
-      confirmationCode: resetCodeController.text.trim(),
-      newPassword: newPasswordController.text.trim(),
-    );
-
-    auth.isLoading = false;
-    _notify();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok
-            ? "Password reimpostata correttamente"
-            : "Errore nella conferma del codice"),
-      ),
-    );
-
-    if (ok) {
-      resetMode = false;
-      codeSent = false;
-      resetCodeController.clear();
-      newPasswordController.clear();
-      _notify();
-    }
-  }
+  // 1 = login, 2 = forgot email, 3 = forgot code
+  int step = 1;
 
   @override
   Widget build(BuildContext context) {
     return BasePage(
-      headerTitle: "Login",
+      headerTitle: _getHeaderTitle(),
       showBack: true,
-      showBell: false,
-      showHome: false,
-      showLogout: false,
-      isLoading: auth.isLoading,
-
+      isLoading: isLoading,
+      scrollable: true,
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 20),
-
-            AppTextField(
-              controller: emailController,
-              label: "Email",
-            ),
-
-            const SizedBox(height: 20),
-
-            if (!resetMode) ...[
-              // NORMAL LOGIN MODE
-              AppTextField(
-                controller: passwordController,
-                label: "Password",
-                obscure: true,
-              ),
-
-              // ⭐ LINK RECUPERA PASSWORD
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    resetMode = true;
-                    _notify();
-                  },
-                  child: const Text(
-                    "Recupera password",
-                    style: AppTextStyles.body,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-            ],
-
-            if (resetMode) ...[
-              // RESET PASSWORD MODE
-              const SizedBox(height: 10),
-
-              BlueNarrowButton(
-                label: "Invia codice",
-                onPressed: sendResetCode,
-              ),
-
-              if (codeSent) ...[
-                const SizedBox(height: 20),
-
-                AppTextField(
-                  controller: resetCodeController,
-                  label: "Codice OTP",
-                ),
-
-                const SizedBox(height: 20),
-
-                AppTextField(
-                  controller: newPasswordController,
-                  label: "Nuova password",
-                  obscure: true,
-                ),
-
-                const SizedBox(height: 20),
-
-                RoundedYellowButton(
-                  label: "Conferma reset",
-                  icon: Icons.check,
-                  onPressed: confirmReset,
-                ),
-              ],
-
-              const SizedBox(height: 20),
-
-              TextButton(
-                onPressed: () {
-                  resetMode = false;
-                  codeSent = false;
-                  _notify();
-                },
-                child: const Text(
-                  "Torna al login",
-                  style: AppTextStyles.body,
-                ),
-              ),
-            ],
-
-            if (!resetMode) ...[
-              if (auth.otpForSignup) ...[
-                AppTextField(
-                  controller: otpController,
-                  label: "Codice OTP",
-                  autofocus: true,
-                ),
-                const SizedBox(height: 20),
-
-                BlueNarrowButton(
-                  label: "Conferma registrazione",
-                  onPressed: () async {
-                    final msg = await auth.confirmOtpSignup(
-                      emailController.text.trim(),
-                      otpController.text.trim(),
-                    );
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(msg ?? "Errore")),
-                    );
-                  },
-                ),
-
-                TextButton(
-                  onPressed: auth.secondsRemaining == 0
-                      ? () async {
-                          final msg = await auth.resendOtp(
-                            emailController.text.trim(),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(msg ?? "")),
-                          );
-                        }
-                      : null,
-                  child: Text(
-                    auth.secondsRemaining == 0
-                        ? "Reinvia codice"
-                        : "Reinvia tra ${auth.secondsRemaining}s",
-                    style: AppTextStyles.body,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-              ],
-
-              SizedBox(
-                width: double.infinity,
-                child: RoundedYellowButton(
-                  label: "Accedi",
-                  icon: Icons.login,
-                  onPressed: () async {
-                    final msg = await auth.login(
-                      emailController.text.trim(),
-                      passwordController.text.trim(),
-                    );
-
-                    if (msg == "LOGIN_OK") {
-                      await NavRoutes().navigateAfterLogin(context);
-                    } else if (msg != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(msg)),
-                      );
-                    }
-                  },
-                ),
-              ),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, "/signup");
-                },
-                child: const Text(
-                  "Non hai un account? Registrati",
-                  style: AppTextStyles.body,
-                ),
-              ),
-            ],
-          ],
-        ),
+        child: _buildStep(),
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // HEADER TITLE DINAMICO
+  // ---------------------------------------------------------------------------
+
+  String _getHeaderTitle() {
+    switch (step) {
+      case 2:
+        return "Recupera password";
+      case 3:
+        return "Reimposta password";
+      default:
+        return "Login";
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // SWITCHER DEI 3 STATI
+  // ---------------------------------------------------------------------------
+
+  Widget _buildStep() {
+    switch (step) {
+      case 2:
+        return _buildForgotEmail();
+      case 3:
+        return _buildForgotCode();
+      default:
+        return _buildLoginForm();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 1 — LOGIN
+  // ---------------------------------------------------------------------------
+
+  Widget _buildLoginForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Accedi al tuo account",
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 25),
+
+        const Text("Email", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: emailController,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: "Inserisci la tua email",
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        const Text("Password", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: passwordController,
+          obscureText: true,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: "Inserisci la tua password",
+          ),
+        ),
+
+        const SizedBox(height: 30),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: isLoading ? null : _login,
+            child: const Text("Accedi"),
+          ),
+        ),
+
+        const SizedBox(height: 15),
+
+        Center(
+          child: TextButton(
+            onPressed: () => setState(() => step = 2),
+            child: const Text("Hai dimenticato la password?"),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        Center(
+          child: TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, "/signup");
+            },
+            child: const Text("Non hai un account? Registrati"),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _login() async {
+    setState(() => isLoading = true);
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    final result = await AuthService.instance.signIn(
+      email: email,
+      password: password,
+    );
+
+    setState(() => isLoading = false);
+
+    if (result == "ok") {
+      Navigator.pushNamedAndRemoveUntil(context, "/user", (_) => false);
+      return;
+    }
+
+    if (result == "unconfirmed") {
+      Navigator.pushNamed(
+        context,
+        "/signup",
+        arguments: {"mode": "otp", "email": email},
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Credenziali non valide")),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 2 — INSERIMENTO EMAIL PER RECUPERO
+  // ---------------------------------------------------------------------------
+
+  Widget _buildForgotEmail() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Inserisci la tua email",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 20),
+
+        TextField(
+          controller: resetEmailController,
+          decoration: const InputDecoration(
+            labelText: "Email",
+            border: OutlineInputBorder(),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        ElevatedButton(
+          onPressed: _sendResetCode,
+          child: const Text("Invia codice"),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _sendResetCode() async {
+    setState(() => isLoading = true);
+
+    final ok = await AuthService.instance.resetPassword(
+      resetEmailController.text.trim(),
+    );
+
+    setState(() => isLoading = false);
+
+    if (ok) {
+      setState(() => step = 3);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Errore durante l'invio del codice")),
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 3 — CODICE + NUOVA PASSWORD
+  // ---------------------------------------------------------------------------
+
+  Widget _buildForgotCode() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Inserisci il codice ricevuto",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 20),
+
+        TextField(
+          controller: resetCodeController,
+          decoration: const InputDecoration(
+            labelText: "Codice",
+            border: OutlineInputBorder(),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        TextField(
+          controller: resetNewPasswordController,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: "Nuova password",
+            border: OutlineInputBorder(),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        ElevatedButton(
+          onPressed: _resetPassword,
+          child: const Text("Conferma"),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _resetPassword() async {
+    setState(() => isLoading = true);
+
+    final ok = await AuthService.instance.confirmResetPassword(
+      email: resetEmailController.text.trim(),
+      confirmationCode: resetCodeController.text.trim(),
+      newPassword: resetNewPasswordController.text.trim(),
+    );
+
+    setState(() => isLoading = false);
+
+    if (ok) {
+      Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Errore durante il reset della password")),
+      );
+    }
   }
 }

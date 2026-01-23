@@ -5,6 +5,7 @@ import '../logiche/navigation/header_routes.dart';
 
 // ⭐ Nuovo sistema notifiche
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+import 'package:tipicooo/logiche/auth/auth_state.dart';
 
 /// Header universale dell’app.
 /// Gestisce titolo, icone e navigazione in modo coerente.
@@ -57,7 +58,16 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     if (showBack) {
       return IconButton(
         icon: const Icon(AppIcons.back, color: AppColors.white),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          // ⭐ Comportamento corretto:
+          // - Se può tornare indietro → torna indietro
+          // - Altrimenti → vai alla Home
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            HeaderRoutes.navigateToHome(context);
+          }
+        },
       );
     }
 
@@ -74,12 +84,19 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   /// Costruisce le icone a destra (Profilo, Notifiche, Logout)
   List<Widget> _buildRightIcons(BuildContext context) {
     final List<Widget> icons = [];
+    final loggedIn = AuthState.isLoggedIn.value;
 
     if (showProfile) {
       icons.add(
         IconButton(
           icon: const Icon(AppIcons.user, color: AppColors.white),
-          onPressed: () => HeaderRoutes.goToProfile(context),
+          onPressed: () {
+            if (loggedIn) {
+              HeaderRoutes.goToUserPage(context);
+            } else {
+              HeaderRoutes.goToProfile(context);
+            }
+          },
         ),
       );
     }

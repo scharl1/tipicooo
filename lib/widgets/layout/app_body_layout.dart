@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// ------------------------------------------------------------
-/// APPBODYLAYOUT — VERSIONE TIPICOOO
+/// APPBODYLAYOUT — VERSIONE TIPICOOO (CORRETTA)
 /// ------------------------------------------------------------
 /// Questo widget applica le regole universali di layout:
 ///
@@ -16,12 +16,9 @@ import 'package:flutter/material.dart';
 ///   → Qualsiasi widget che contiene “Button” nel nome
 ///   → Il pulsante più grande determina la misura di tutti
 ///
-/// NOTE IMPORTANTI:
-/// - Nessun overlay
-/// - Nessun IntrinsicWidth
-/// - Nessuna compressione del layout interno dei pulsanti
-/// - Misurazione post‑frame (Flutter‑safe)
-/// - I pulsanti restano puri: nessuna logica dentro custom_buttons.dart
+/// FIX IMPORTANTI:
+/// ✔ Misurazione sicura (solo quando il widget ha una size valida)
+/// ✔ Microtask post‑frame per evitare crash
 /// ------------------------------------------------------------
 class AppBodyLayout extends StatefulWidget {
   final List<Widget> children;
@@ -50,9 +47,11 @@ class _AppBodyLayoutState extends State<AppBodyLayout> {
   void initState() {
     super.initState();
 
-    /// Post‑frame callback:
-    /// Flutter ha già costruito e misurato tutto → ora possiamo misurare i pulsanti
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureButtons());
+    /// Post‑frame callback sicura
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Future.microtask(_measureButtons); // ⭐ FIX
+    });
   }
 
   /// ------------------------------------------------------------
@@ -68,7 +67,9 @@ class _AppBodyLayoutState extends State<AppBodyLayout> {
       if (context == null) continue;
 
       final renderBox = context.findRenderObject() as RenderBox?;
-      if (renderBox == null) continue;
+
+      /// ⭐ FIX: evita crash se il widget non ha ancora una size
+      if (renderBox == null || !renderBox.hasSize) continue;
 
       final width = renderBox.size.width;
       if (width > maxWidth) maxWidth = width;

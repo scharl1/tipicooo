@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/logiche/auth/auth_delete_service.dart';
+import 'package:tipicooo/logiche/auth/auth_state.dart';
 import 'package:tipicooo/logiche/navigation/app_routes.dart';
 
 // ⭐ Nuovo sistema notifiche
@@ -12,7 +13,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:tipicooo/widgets/layout/app_body_layout.dart';
-import 'package:tipicooo/widgets/app_bottom_nav.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -22,7 +22,7 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  String? userName;
+  String? fullName;
 
   final AuthDeleteService _deleteService = AuthDeleteService();
 
@@ -33,21 +33,33 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> _loadUserData() async {
-    final attributes = await AuthService().getUserAttributes();
+    final attributes = await AuthService.instance.getUserAttributes();
 
-    final name = attributes['given_name'] ??
-        attributes['name'] ??
-        attributes['email'] ??
-        "Utente";
+    if (attributes.isEmpty) {
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (route) => false,
+      );
+      return;
+    }
+
+    final name = attributes['given_name'] ?? "";
+    final emailFallback = attributes['email'] ?? "Utente";
+
+    final computedName = name.isNotEmpty
+        ? name.split(" ").first
+        : emailFallback;
 
     setState(() {
-      userName = name;
+      fullName = computedName.trim();
     });
   }
 
   Future<void> _logout() async {
     try {
-      await AuthService().logout();
+      await AuthService.instance.logout();
     } catch (e) {
       debugPrint("Errore logout: $e");
     }
@@ -105,9 +117,9 @@ class _UserPageState extends State<UserPage> {
     );
 
     await _deleteService.deleteCurrentUser();
-    await _deleteService.logoutAfterDeletion();
 
-    // ⭐ NUOVO SISTEMA NOTIFICHE PROFESSIONALE
+    AuthState.setLoggedOut();
+
     NotificationController.instance.addNotification(
       AppNotification(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -131,14 +143,15 @@ class _UserPageState extends State<UserPage> {
     return BasePage(
       headerTitle: 'Benvenuto',
       showHome: true,
+      showBack: false,
+      showBell: false,
+      showProfile: true,
       showLogout: true,
       onLogout: _logout,
 
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
-
       body: AppBodyLayout(
         children: [
-          if (userName == null) ...[
+          if (fullName == null) ...[
             const CircularProgressIndicator(color: AppColors.primaryBlue),
             const SizedBox(height: 20),
             const Text(
@@ -148,15 +161,28 @@ class _UserPageState extends State<UserPage> {
             ),
           ] else ...[
             Text(
-              userName!,
+              fullName!,
               style: AppTextStyles.sectionTitle.copyWith(
                 color: AppColors.primaryBlue,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 30),
           ],
 
+          // 🔵 NUOVO BOTTONE: SUGGERISCI
+          BlueNarrowButton(
+            label: "Suggerisci",
+            icon: Icons.lightbulb_outline,
+            onPressed: () {
+              Navigator.pushNamed(context, '/suggest');
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // 🔴 BOTTONE ELIMINA PROFILO
           DangerButton(
             label: "Elimina Profilo",
             icon: Icons.delete_forever,

@@ -13,8 +13,8 @@ class ProfilePage extends StatelessWidget {
     return BasePage(
       headerTitle: 'Unisciti a noi',
       showBell: false,
-      showBack: false,
-      showHome: true,
+      showBack: true,
+      showHome: false,
       bottomNavigationBar: const AppBottomNav(currentIndex: 2),
 
       body: AppBodyLayout(

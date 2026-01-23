@@ -30,9 +30,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     return BasePage(
       headerTitle: "Le tue notifiche",
-      showBell: false,
       showBack: true,
-      scrollable: false, // ⭐ OBBLIGATORIO PER EVITARE CRASH
+      showHome: false,
+      showBell: false,
+      showProfile: true,   // ⭐ AGGIUNTO PER COERENZA
+      scrollable: false,   // ⭐ OBBLIGATORIO PER EVITARE CRASH
 
       body: notifications.isEmpty
           ? const Padding(

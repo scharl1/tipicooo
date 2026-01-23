@@ -11,9 +11,12 @@ class SearchPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BasePage(
       headerTitle: 'Intorno a te',
-      showBack: false,
-      showHome: true,
+      showBack: true,
+      showHome: false,
       showBell: false,
+      showProfile: true,
+
+      // ⭐ Search = index 0
       bottomNavigationBar: const AppBottomNav(currentIndex: 0),
 
       body: AppBodyLayout(

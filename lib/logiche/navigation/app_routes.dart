@@ -1,6 +1,9 @@
 // lib/logiche/navigation/app_routes.dart
 
 class AppRoutes {
+  // ⭐ Rotta iniziale (InitPage)
+  static const String init = '/init';
+
   // Rotte basate sul ruolo Cognito (usate DOPO il login)
   static const String admin = '/admin';
   static const String user = '/user';
@@ -14,4 +17,10 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String login = '/login';
   static const String testPage = '/test-page';
+
+  // ⭐ Rotta per la pagina "Suggerisci"
+  static const String suggest = '/suggest';
+
+  // ⭐ NUOVA ROTTA per la pagina "Invita con WhatsApp"
+  static const String suggestUser = '/suggest_user';
 }

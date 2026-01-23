@@ -11,9 +11,10 @@ class FavoritesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BasePage(
       headerTitle: 'Preferiti',
+      showBack: true,        // ⭐ pagina root → niente back
+      showHome: false,
       showBell: false,
-      showBack: false,
-      showHome: true,
+      showProfile: true,      // ⭐ coerenza con Home e Search
       bottomNavigationBar: const AppBottomNav(currentIndex: 1),
 
       body: AppBodyLayout(

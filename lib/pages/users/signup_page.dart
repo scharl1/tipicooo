@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tipicooo/logiche/auth/registration.dart';
-import 'package:tipicooo/logiche/navigation/app_routes.dart';
-import 'package:tipicooo/widgets/apptextfield.dart';
-import 'package:tipicooo/widgets/custom_buttons.dart';
+import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/widgets/base_page.dart';
-import 'package:tipicooo/theme/app_text_styles.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -14,151 +10,170 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final nameController = TextEditingController();
-  final surnameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final repeatPasswordController = TextEditingController();
-  final otpController = TextEditingController();
+  // CONTROLLER FORM REGISTRAZIONE
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController surnameController = TextEditingController();
+
+  // CONTROLLER OTP
+  final TextEditingController otpController = TextEditingController();
 
   bool isLoading = false;
-  bool showOtpField = false;
-
-  void _showMessage(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-  Future<void> _doSignup() async {
-    FocusScope.of(context).unfocus();
-
-    final name = nameController.text.trim();
-    final surname = surnameController.text.trim();
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final repeatPassword = repeatPasswordController.text.trim();
-
-    if (name.isEmpty) return _showMessage("Inserisci il nome");
-    if (surname.isEmpty) return _showMessage("Inserisci il cognome");
-    if (!email.contains("@") || !email.contains(".")) return _showMessage("Email non valida");
-    if (password.length < 6) return _showMessage("La password deve avere almeno 6 caratteri");
-    if (password != repeatPassword) return _showMessage("Le password non coincidono");
-
-    setState(() => isLoading = true);
-
-    final result = await Registration.signUp(
-      email: email,
-      name: name,
-      surname: surname,
-      password: password,
-      repeatPassword: repeatPassword,
-    );
-
-    setState(() => isLoading = false);
-
-    if (!result.success) {
-      _showMessage(result.message);
-      return;
-    }
-
-    setState(() => showOtpField = true);
-    _showMessage("Codice inviato alla tua email.");
-  }
-
-  Future<void> _confirmOtp() async {
-    FocusScope.of(context).unfocus();
-
-    final email = emailController.text.trim();
-    final otp = otpController.text.trim();
-
-    if (otp.isEmpty) return _showMessage("Inserisci il codice OTP");
-
-    setState(() => isLoading = true);
-
-    final result = await Registration.confirmSignUp(
-      email: email,
-      code: otp,
-    );
-
-    setState(() => isLoading = false);
-
-    if (!result.success) {
-      _showMessage(result.message);
-      return;
-    }
-
-    _showMessage("Registrazione completata! Ora accedi.");
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
-  }
 
   @override
   Widget build(BuildContext context) {
-    return BasePage(
-      headerTitle: "Registrazione",
-      showBack: true,
-      showBell: false,
-      showHome: true,
-      showLogout: false,
+    // ARGOMENTI PASSATI DAL LOGIN O DALLA REGISTRAZIONE
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
+    final bool otpMode = args?["mode"] == "otp";
+    final String? pendingEmail = args?["email"];
+
+    return BasePage(
+      headerTitle: otpMode ? "Conferma OTP" : "Registrazione",
+      showBack: true,
+      isLoading: isLoading,
+      scrollable: true,
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 20),
-
-            if (!showOtpField) ...[
-              AppTextField(controller: nameController, label: "Nome"),
-              const SizedBox(height: 20),
-
-              AppTextField(controller: surnameController, label: "Cognome"),
-              const SizedBox(height: 20),
-
-              AppTextField(controller: emailController, label: "Email"),
-              const SizedBox(height: 20),
-
-              AppTextField(controller: passwordController, label: "Password", obscure: true),
-              const SizedBox(height: 20),
-
-              AppTextField(controller: repeatPasswordController, label: "Ripeti Password", obscure: true),
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: BlueNarrowButton(
-                  label: isLoading ? "Attendere..." : "Registrati",
-                  onPressed: isLoading ? () {} : _doSignup,
-                ),
-              ),
-            ],
-
-            if (showOtpField) ...[
-              AppTextField(controller: otpController, label: "Codice OTP"),
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: BlueNarrowButton(
-                  label: isLoading ? "Verifica..." : "Conferma Codice",
-                  onPressed: isLoading ? () {} : _confirmOtp,
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 20),
-
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
-              },
-              child: const Text(
-                "Hai già un account? Accedi",
-                style: AppTextStyles.body,
-              ),
-            ),
-          ],
-        ),
+        child: otpMode
+            ? _buildOtpSection(pendingEmail)
+            : _buildSignupForm(),
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // FORM REGISTRAZIONE
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSignupForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Crea un nuovo account",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 20),
+
+        TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: "Nome"),
+        ),
+        const SizedBox(height: 10),
+
+        TextField(
+          controller: surnameController,
+          decoration: const InputDecoration(labelText: "Cognome"),
+        ),
+        const SizedBox(height: 10),
+
+        TextField(
+          controller: emailController,
+          decoration: const InputDecoration(labelText: "Email"),
+        ),
+        const SizedBox(height: 10),
+
+        TextField(
+          controller: passwordController,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: "Password"),
+        ),
+        const SizedBox(height: 20),
+
+        ElevatedButton(
+          onPressed: () async {
+            setState(() => isLoading = true);
+
+            final result = await AuthService.instance.signUpAsConsumer(
+              email: emailController.text.trim(),
+              password: passwordController.text.trim(),
+              name: nameController.text.trim(),
+              surname: surnameController.text.trim(),
+            );
+
+            setState(() => isLoading = false);
+
+            if (result != null) {
+              Navigator.pushNamed(
+                context,
+                "/signup",
+                arguments: {
+                  "mode": "otp",
+                  "email": emailController.text.trim(),
+                },
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Errore durante la registrazione")),
+              );
+            }
+          },
+          child: const Text("Registrati"),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEZIONE OTP
+  // ---------------------------------------------------------------------------
+
+  Widget _buildOtpSection(String? email) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Inserisci il codice ricevuto via email",
+            style: TextStyle(fontSize: 18)),
+        const SizedBox(height: 10),
+
+        Text(
+          email ?? "",
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 30),
+
+        TextField(
+          controller: otpController,
+          decoration: const InputDecoration(
+            labelText: "Codice OTP",
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        ElevatedButton(
+          onPressed: () async {
+            setState(() => isLoading = true);
+
+            final ok = await AuthService.instance.confirmSignUp(
+              email: email!,
+              code: otpController.text.trim(),
+            );
+
+            setState(() => isLoading = false);
+
+            if (ok) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                "/user",
+                (_) => false,
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Codice non valido")),
+              );
+            }
+          },
+          child: const Text("Conferma"),
+        ),
+
+        TextButton(
+          onPressed: () {
+            AuthService.instance.resendSignUpCode(email!);
+          },
+          child: const Text("Reinvia codice"),
+        ),
+      ],
     );
   }
 }

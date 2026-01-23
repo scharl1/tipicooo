@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:tipicooo/widgets/base_page.dart';
-import 'package:tipicooo/widgets/app_bottom_nav.dart';
-import 'package:tipicooo/widgets/custom_buttons.dart';
-import 'package:tipicooo/theme/app_text_styles.dart';
-import 'package:tipicooo/logiche/navigation/app_routes.dart';
 import 'package:tipicooo/logiche/auth/auth_state.dart';
-import 'package:tipicooo/widgets/layout/app_body_layout.dart';
+import 'package:tipicooo/logiche/navigation/app_routes.dart';
+
+import '../widgets/base_page.dart';
+import '../widgets/app_bottom_nav.dart';
+import '../widgets/layout/app_body_layout.dart';
+import '../widgets/custom_buttons.dart';
+import '../theme/app_text_styles.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -17,9 +18,15 @@ class HomePage extends StatelessWidget {
       builder: (context, loggedIn, _) {
         return BasePage(
           headerTitle: "Tipic.ooo",
+
           showBell: true,
           showProfile: loggedIn,
-          bottomNavigationBar: AppBottomNav(currentIndex: 3),
+          showHome: false,
+          showBack: false,
+          showLogout: false,
+
+          // ⭐ Home NON deve avere un indice della bottom bar
+          bottomNavigationBar: const AppBottomNav(currentIndex: -1),
 
           body: AppBodyLayout(
             children: [

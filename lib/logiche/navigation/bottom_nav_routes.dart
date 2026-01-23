@@ -2,17 +2,19 @@
 
 import 'package:flutter/material.dart';
 import 'app_routes.dart';
-import '../auth/auth_utils.dart'; // 👈 serve per controllare login
+import '../auth/auth_state.dart';
 
 class BottomNavRoutes {
   static void navigateToIndex(
     BuildContext context,
     int index,
     int currentIndex,
-  ) async {
+  ) {
+    // ⭐ Normalizzazione dell’indice
+    final safeCurrent = (currentIndex < 0 || currentIndex > 2) ? 0 : currentIndex;
 
-    // Permetti sempre la navigazione verso Cerca (index 0)
-    if (index == currentIndex && index != 0) return;
+    // Evita ricarichi inutili
+    if (index == safeCurrent) return;
 
     switch (index) {
 
@@ -28,19 +30,16 @@ class BottomNavRoutes {
 
       // 🔵 PROFILO
       case 2:
-        final loggedIn = await AuthUtils.isLoggedIn();
+        final loggedIn = AuthState.isLoggedIn.value;
 
         if (loggedIn) {
+          // Utente loggato → icona NON cliccabile
           debugPrint("Profilo cliccato ma utente già loggato → nessuna navigazione");
           return;
         }
 
+        // Utente NON loggato → vai a ProfilePage
         _safeNavigate(context, AppRoutes.profile);
-        break;
-
-      // 🔵 HOME (nuovo index 3)
-      case 3:
-        _safeNavigate(context, AppRoutes.home);
         break;
 
       // 🔵 DEFAULT
@@ -49,8 +48,12 @@ class BottomNavRoutes {
     }
   }
 
+  // ⭐ Metodo per aprire la ProfilePage da bottom nav
+  static void goToProfile(BuildContext context) {
+    _safeNavigate(context, AppRoutes.profile);
+  }
+
   static void _safeNavigate(BuildContext context, String routeName) {
-    // ⭐ Protezione contro async gaps
     if (!context.mounted) return;
 
     try {

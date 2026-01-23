@@ -2,20 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:tipicooo/amplifyconfiguration.dart';
+import 'auth_state.dart';
 
 class AuthService {
-  AuthService._privateConstructor();
-  static final AuthService _instance = AuthService._privateConstructor();
-  factory AuthService() => _instance;
+  AuthService._();
+  static final AuthService instance = AuthService._();
 
   static bool _isConfigured = false;
+
+  // ---------------------------------------------------------------------------
+  // CONFIGURAZIONE AMPLIFY
+  // ---------------------------------------------------------------------------
 
   static Future<void> configure() async {
     if (_isConfigured) return;
 
     try {
-      final auth = AmplifyAuthCognito();
-      await Amplify.addPlugin(auth);
+      await Amplify.addPlugin(AmplifyAuthCognito());
       await Amplify.configure(amplifyconfig);
       _isConfigured = true;
       debugPrint("Amplify configurato correttamente");
@@ -24,7 +27,11 @@ class AuthService {
     }
   }
 
-  Future<bool> signIn({
+  // ---------------------------------------------------------------------------
+  // LOGIN
+  // ---------------------------------------------------------------------------
+
+  Future<String> signIn({
     required String email,
     required String password,
   }) async {
@@ -33,16 +40,59 @@ class AuthService {
         username: email,
         password: password,
       );
-      return result.isSignedIn;
+
+      debugPrint("🔥 SIGN-IN RESULT:");
+      debugPrint("isSignedIn: ${result.isSignedIn}");
+      debugPrint("nextStep: ${result.nextStep.signInStep}");
+      debugPrint("additionalInfo: ${result.nextStep.additionalInfo}");
+
+      // LOGIN OK
+      if (result.isSignedIn) {
+        AuthState.setLoggedIn();
+        return "ok";
+      }
+
+      // UTENTE NON CONFERMATO
+      if (result.nextStep.signInStep == AuthSignInStep.confirmSignUp) {
+        return "unconfirmed";
+      }
+
+      // PASSWORD SBAGLIATA
+      if (result.nextStep.signInStep == AuthSignInStep.done &&
+          !result.isSignedIn) {
+        return "invalid";
+      }
+
+      return "error";
+
+    } on UserNotConfirmedException {
+      return "unconfirmed";
+
+    } on UserNotFoundException {
+      return "not_found";
+
     } on AuthException catch (e) {
-      debugPrint('Errore login: ${e.message}');
-      return false;
+      debugPrint("🔥 ERRORE COGNITO LOGIN:");
+      debugPrint("Tipo: ${e.runtimeType}");
+      debugPrint("Messaggio: ${e.message}");
+
+      if (e.message.contains("Incorrect username or password")) {
+        return "invalid";
+      }
+
+      return "error";
     }
   }
 
-  Future<bool> signUpAsConsumer({
+  // ---------------------------------------------------------------------------
+  // SIGNUP CONSUMATORE
+  // ---------------------------------------------------------------------------
+
+  Future<SignUpResult?> signUpAsConsumer({
     required String email,
     required String password,
+    required String name,
+    required String surname,
   }) async {
     try {
       final result = await Amplify.Auth.signUp(
@@ -51,18 +101,30 @@ class AuthService {
         options: SignUpOptions(
           userAttributes: {
             CognitoUserAttributeKey.email: email,
+            CognitoUserAttributeKey.givenName: name,
+            CognitoUserAttributeKey.familyName: surname,
             const CognitoUserAttributeKey.custom('role'): 'consumatore_finale',
           },
         ),
       );
-      return result.isSignUpComplete;
+
+      return result;
+
+    } on UsernameExistsException {
+      debugPrint("Utente già esistente");
+      return null;
+
     } on AuthException catch (e) {
-      debugPrint('Errore signup: ${e.message}');
-      return false;
+      debugPrint("Errore signup: ${e.message}");
+      return null;
     }
   }
 
-  Future<bool> signUpAsAdmin({
+  // ---------------------------------------------------------------------------
+  // SIGNUP ADMIN
+  // ---------------------------------------------------------------------------
+
+  Future<SignUpResult?> signUpAsAdmin({
     required String email,
     required String password,
   }) async {
@@ -77,40 +139,72 @@ class AuthService {
           },
         ),
       );
-      return result.isSignUpComplete;
+
+      return result;
+
+    } on UsernameExistsException {
+      debugPrint("Admin già esistente");
+      return null;
+
     } on AuthException catch (e) {
-      debugPrint('Errore signup admin: ${e.message}');
+      debugPrint("Errore signup admin: ${e.message}");
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // CONFERMA SIGNUP (OTP)
+  // ---------------------------------------------------------------------------
+
+  Future<bool> confirmSignUp({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      await Amplify.Auth.confirmSignUp(
+        username: email,
+        confirmationCode: code,
+      );
+      return true;
+    } on AuthException catch (e) {
+      debugPrint("Errore conferma signup: ${e.message}");
       return false;
     }
   }
 
-  // ⭐ LOGOUT NORMALE — USATO DALLA UI
+  // ---------------------------------------------------------------------------
+  // REINVIO CODICE OTP
+  // ---------------------------------------------------------------------------
+
+  Future<void> resendSignUpCode(String email) async {
+    try {
+      await Amplify.Auth.resendSignUpCode(username: email);
+      debugPrint("Codice reinviato");
+    } on AuthException catch (e) {
+      debugPrint("Errore reinvio codice: ${e.message}");
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // LOGOUT
+  // ---------------------------------------------------------------------------
+
   Future<void> logout() async {
     try {
-      await Amplify.Auth.signOut();
+      await Amplify.Auth.signOut(
+        options: const SignOutOptions(globalSignOut: true),
+      );
+
+      AuthState.setLoggedOut();
+
     } on AuthException catch (e) {
-      debugPrint('Errore logout: ${e.message}');
+      debugPrint("Errore logout: ${e.message}");
     }
   }
 
-  // (rimane anche signOut, se ti serve internamente)
-  Future<void> signOut() async {
-    try {
-      await Amplify.Auth.signOut();
-    } on AuthException catch (e) {
-      debugPrint('Errore logout: ${e.message}');
-    }
-  }
-
-  Future<bool> isLoggedIn() async {
-    try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      return session.isSignedIn;
-    } on AuthException catch (e) {
-      debugPrint('Errore fetch session: ${e.message}');
-      return false;
-    }
-  }
+  // ---------------------------------------------------------------------------
+  // ATTRIBUTI UTENTE
+  // ---------------------------------------------------------------------------
 
   Future<Map<String, String>> getUserAttributes() async {
     try {
@@ -119,7 +213,7 @@ class AuthService {
         for (var a in attributes) a.userAttributeKey.key: a.value,
       };
     } on AuthException catch (e) {
-      debugPrint('Errore fetch attributes: ${e.message}');
+      debugPrint("Errore fetch attributes: ${e.message}");
       return {};
     }
   }
@@ -139,24 +233,32 @@ class AuthService {
       if (roleAttribute.value.isEmpty) return null;
 
       return roleAttribute.value;
+
     } on AuthException catch (e) {
-      debugPrint('Errore fetch role: ${e.message}');
+      debugPrint("Errore fetch role: ${e.message}");
       return null;
     }
   }
 
-  // ⭐ RECUPERO PASSWORD — INVIA CODICE
+  // ---------------------------------------------------------------------------
+  // RESET PASSWORD
+  // ---------------------------------------------------------------------------
+
   Future<bool> resetPassword(String email) async {
     try {
       await Amplify.Auth.resetPassword(username: email);
-      return true; // ⭐ Cognito ha inviato il codice
+      return true;
+
+    } on UserNotFoundException {
+      debugPrint("Utente non trovato");
+      return false;
+
     } on AuthException catch (e) {
-      debugPrint('Errore reset password: ${e.message}');
+      debugPrint("Errore reset password: ${e.message}");
       return false;
     }
   }
 
-  // ⭐ CONFERMA CODICE E IMPOSTA NUOVA PASSWORD
   Future<bool> confirmResetPassword({
     required String email,
     required String newPassword,
@@ -169,8 +271,9 @@ class AuthService {
         confirmationCode: confirmationCode,
       );
       return true;
+
     } on AuthException catch (e) {
-      debugPrint('Errore conferma reset password: ${e.message}');
+      debugPrint("Errore conferma reset password: ${e.message}");
       return false;
     }
   }

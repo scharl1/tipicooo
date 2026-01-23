@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import '../logiche/navigation/bottom_nav_routes.dart';
 import '../logiche/auth/auth_state.dart';
 
-/// Barra di navigazione inferiore universale.
-/// Gestisce le tre sezioni principali dell’app.
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
 
@@ -13,39 +10,48 @@ class AppBottomNav extends StatelessWidget {
     this.currentIndex = 0,
   });
 
+  void _onTap(BuildContext context, int index, bool loggedIn) {
+    // Se siamo in Home (currentIndex = -1), NON blocchiamo mai il tap
+    if (currentIndex != -1 && index == currentIndex) return;
+
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, "/search");
+        break;
+
+      case 1:
+        Navigator.pushReplacementNamed(context, "/favorites");
+        break;
+
+      case 2:
+        if (loggedIn) {
+          Navigator.pushReplacementNamed(context, "/user");
+        } else {
+          Navigator.pushReplacementNamed(context, "/login");
+        }
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
       builder: (context, loggedIn, _) {
-
-        // ⭐ Protezione: se currentIndex è 3 (Home), la bottom nav non deve crashare
-        final safeIndex = currentIndex > 2 ? 0 : currentIndex;
+        // ⭐ Se currentIndex = -1 (Home), usiamo 0 per evitare crash
+        final safeIndex = currentIndex == -1 ? 0 : currentIndex;
 
         return BottomNavigationBar(
           currentIndex: safeIndex,
           backgroundColor: AppColors.white,
-          selectedItemColor: AppColors.primaryBlue,
+
+          // ⭐ Se siamo in Home, nessuna icona deve sembrare attiva
+          selectedItemColor:
+              currentIndex == -1 ? Colors.grey : AppColors.primaryBlue,
+
           unselectedItemColor: Colors.grey,
 
-          onTap: (index) {
-            // 🔵 BLOCCO PROFILO SE UTENTE LOGGATO
-            if (index == 2 && loggedIn) {
-              return;
-            }
-
-            // 🔵 BLOCCO CLICK SULLA PAGINA CORRENTE
-            if (index == currentIndex) {
-              return;
-            }
-
-            // 🔵 NAVIGAZIONE CENTRALIZZATA
-            BottomNavRoutes.navigateToIndex(
-              context,
-              index,
-              currentIndex,
-            );
-          },
+          onTap: (index) => _onTap(context, index, loggedIn),
 
           items: const [
             BottomNavigationBarItem(
