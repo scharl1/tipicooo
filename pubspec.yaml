@@ -11,16 +11,27 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+
+  # ⭐ AWS Amplify (Cognito + API)
   amplify_flutter: ^2.8.0
   amplify_auth_cognito: ^2.8.0
-  shared_preferences: ^2.2.2
+  amplify_api: ^2.8.0     # 👈 AGGIUNTO
 
   # ⭐ Persistenza locale
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
-  # ⭐ NECESSARIO PER APRIRE WHATSAPP E URL
+  # ⭐ Apertura URL / WhatsApp
   url_launcher: ^6.2.5
+
+  # ⭐ Stato reattivo
+  provider: ^6.1.2
+
+  # ⭐ Foto (Android/iOS)
+  image_picker: ^1.1.2
+
+  # ⭐ Preferenze locali
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -37,11 +48,11 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#0071C2"
-  image: assets/icon/tipicooo.png
+  image: "assets/icon/tipicooo.png"
   android: true
   ios: true
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/icon/
+    - assets/icon/     # 👈 CORRETTO

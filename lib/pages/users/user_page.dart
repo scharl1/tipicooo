@@ -48,10 +48,10 @@ class _UserPageState extends State<UserPage> {
     final name = attributes['given_name'] ?? "";
     final emailFallback = attributes['email'] ?? "Utente";
 
-    final computedName = name.isNotEmpty
-        ? name.split(" ").first
-        : emailFallback;
+    final computedName =
+        name.isNotEmpty ? name.split(" ").first : emailFallback;
 
+    if (!mounted) return;
     setState(() {
       fullName = computedName.trim();
     });
@@ -171,12 +171,23 @@ class _UserPageState extends State<UserPage> {
             const SizedBox(height: 30),
           ],
 
-          // 🔵 NUOVO BOTTONE: SUGGERISCI
+          // 🔵 BOTTONE: SUGGERISCI (corretto)
           BlueNarrowButton(
             label: "Suggerisci",
             icon: Icons.lightbulb_outline,
             onPressed: () {
               Navigator.pushNamed(context, '/suggest');
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // 🔵 NUOVO BOTTONE: REGISTRA ATTIVITÀ
+          BlueNarrowButton(
+            label: "Registra attività",
+            icon: Icons.store_mall_directory,
+            onPressed: () {
+              Navigator.pushNamed(context, '/register_activity');
             },
           ),
 

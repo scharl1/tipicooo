@@ -21,6 +21,12 @@ class AppRoutes {
   // ⭐ Rotta per la pagina "Suggerisci"
   static const String suggest = '/suggest';
 
-  // ⭐ NUOVA ROTTA per la pagina "Invita con WhatsApp"
+  // ⭐ Rotta per la pagina "Invita con WhatsApp"
   static const String suggestUser = '/suggest_user';
+
+  // ⭐ Rotta per la pagina "Suggerisci attività"
+  static const String suggestActivity = '/suggest_activity';
+
+  // ⭐ NUOVA ROTTA per la pagina "Registra attività"
+  static const String registerActivity = '/register_activity';
 }
