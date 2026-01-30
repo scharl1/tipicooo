@@ -173,7 +173,7 @@ class _UserPageState extends State<UserPage> {
 
           // 🔵 BOTTONE: SUGGERISCI (corretto)
           BlueNarrowButton(
-            label: "Suggerisci",
+            label: "Suggerisci ai miei contatti",
             icon: Icons.lightbulb_outline,
             onPressed: () {
               Navigator.pushNamed(context, '/suggest');
@@ -192,6 +192,16 @@ class _UserPageState extends State<UserPage> {
           ),
 
           const SizedBox(height: 20),
+          // 🔵 NUOVO BOTTONE: ENTRA NEL TUO UFFICIO
+            BlueNarrowButton(
+              label: "Entra in ufficio",
+              icon: Icons.business_center,
+              onPressed: () {
+                // Nessuna logica, come richiesto
+              },
+            ),
+
+            const SizedBox(height: 20),
 
           // 🔴 BOTTONE ELIMINA PROFILO
           DangerButton(

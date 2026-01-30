@@ -101,4 +101,33 @@ class AuthService {
       return null;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // CONTROLLO SE L’UTENTE È ADMIN (gruppi Cognito)
+  // ---------------------------------------------------------------------------
+  Future<bool> isAdmin() async {
+    try {
+      final idToken = await getIdToken();
+      if (idToken == null) return false;
+
+      final parts = idToken.split('.');
+      if (parts.length != 3) return false;
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+
+      final data = json.decode(decoded);
+
+      final groups = data["cognito:groups"];
+      if (groups is List && groups.contains("admin")) {
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint("Errore controllo admin: $e");
+      return false;
+    }
+  }
 }
