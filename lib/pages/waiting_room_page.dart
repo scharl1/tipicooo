@@ -1,69 +1,79 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:tipicooo/widgets/base_page.dart';
+import 'package:tipicooo/widgets/custom_buttons.dart';
+import 'package:tipicooo/logiche/requests/user_request_service.dart';
 
-class WaitingRoomPage extends StatelessWidget {
-  final WaitingRoomStatus status;
+class WaitingRoomPage extends StatefulWidget {
+  const WaitingRoomPage({super.key});
 
-  const WaitingRoomPage({
-    super.key,
-    required this.status,
-  });
+  @override
+  State<WaitingRoomPage> createState() => _WaitingRoomPageState();
+}
+
+class _WaitingRoomPageState extends State<WaitingRoomPage> {
+  bool isLoading = false;
+
+  Future<void> _sendRequest() async {
+    setState(() => isLoading = true);
+
+    final success = await UserRequestService.sendAccessRequest();
+
+    setState(() => isLoading = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? "Richiesta inviata correttamente!"
+              : "Errore durante l'invio della richiesta.",
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return BasePage(
-      title: "Tipic.ooo Bar",
-      showBackButton: true, // ← usa la tua icona back in app_header.dart
-      body: SingleChildScrollView(
+      headerTitle: "Tipic.ooo Bar",
+      showBack: true,
+      scrollable: true,
+      body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
 
-            // -----------------------------
-            // HERO SECTION (salottino)
-            // -----------------------------
-            Center(
-              child: SizedBox(
-                height: 260,
-                child: Image.asset(
-                  "assets/images/waiting_room_hero.png",
-                  fit: BoxFit.contain,
-                ),
+            // ⭐ IMMAGINE
+            SizedBox(
+              height: 260,
+              child: Lottie.asset(
+                "assets/lottie/waiting_hero.json",
+                fit: BoxFit.contain,
               ),
             ),
 
             const SizedBox(height: 32),
 
-            // -----------------------------
-            // STATUS SECTION (semaforo + titolo)
-            // -----------------------------
-            Center(
-              child: Column(
-                children: [
-                  _buildTrafficLight(status),
-                  const SizedBox(height: 16),
-                  Text(
-                    _buildTitle(status),
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: _buildTitleColor(status),
-                    ),
+            // ⭐ PULSANTE CON LOGICA
+            isLoading
+                ? const CircularProgressIndicator(color: Colors.blue)
+                : BlueNarrowButton(
+                    label: "Invia richiesta di accesso",
+                    icon: Icons.send,
+                    onPressed: _sendRequest,
                   ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // -----------------------------
-            // DESCRIPTION SECTION
-            // -----------------------------
-            Text(
-              _buildDescription(status),
-              style: const TextStyle(
+            // ⭐ TESTO SOTTO IL PULSANTE
+            const Text(
+              "La richiesta dovrà essere approvata,\n"
+              "riceverai una notifica quando verificheremo la posizione.\n"
+              "Grazie",
+              textAlign: TextAlign.center,
+              style: TextStyle(
                 fontSize: 16,
                 height: 1.4,
                 color: Color(0xFF6F6F6F),
@@ -76,67 +86,4 @@ class WaitingRoomPage extends StatelessWidget {
       ),
     );
   }
-
-  // ---------------------------------------------------------
-  // WIDGET SEMAFORO
-  // ---------------------------------------------------------
-  Widget _buildTrafficLight(WaitingRoomStatus status) {
-    switch (status) {
-      case WaitingRoomStatus.pending:
-        return Image.asset(
-          "assets/images/traffic_yellow.png",
-          height: 90,
-        );
-
-      case WaitingRoomStatus.rejected:
-        return Image.asset(
-          "assets/images/traffic_red.png",
-          height: 90,
-        );
-    }
-  }
-
-  // ---------------------------------------------------------
-  // TITOLO
-  // ---------------------------------------------------------
-  String _buildTitle(WaitingRoomStatus status) {
-    switch (status) {
-      case WaitingRoomStatus.pending:
-        return "Richiesta in attesa";
-      case WaitingRoomStatus.rejected:
-        return "Richiesta respinta";
-    }
-  }
-
-  // ---------------------------------------------------------
-  // COLORE TITOLO
-  // ---------------------------------------------------------
-  Color _buildTitleColor(WaitingRoomStatus status) {
-    switch (status) {
-      case WaitingRoomStatus.pending:
-        return const Color(0xFFF4A300); // giallo
-      case WaitingRoomStatus.rejected:
-        return const Color(0xFFD32F2F); // rosso
-    }
-  }
-
-  // ---------------------------------------------------------
-  // DESCRIZIONE
-  // ---------------------------------------------------------
-  String _buildDescription(WaitingRoomStatus status) {
-    switch (status) {
-      case WaitingRoomStatus.pending:
-        return "La tua richiesta è stata inviata.\nIl nostro staff la sta valutando.";
-      case WaitingRoomStatus.rejected:
-        return "La tua richiesta non è stata approvata.\nPer maggiori informazioni contatta il nostro staff.";
-    }
-  }
-}
-
-// ---------------------------------------------------------
-// ENUM STATO
-// ---------------------------------------------------------
-enum WaitingRoomStatus {
-  pending,
-  rejected,
 }

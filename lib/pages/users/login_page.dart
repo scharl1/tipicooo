@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:tipicooo/widgets/base_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -64,6 +65,11 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await Amplify.Auth.signInWithWebUI();
       if (!mounted) return;
+
+      // ⭐ VERSIONE CORRETTA PER AMPLIFY 2.x
+      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+      final tokens = session.userPoolTokensResult.value;
+      print("TOKEN_ADMIN: ${tokens.idToken.raw}");
 
       Navigator.pushNamedAndRemoveUntil(context, "/user", (_) => false);
     } catch (e) {

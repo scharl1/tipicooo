@@ -15,7 +15,7 @@ dependencies:
   # ⭐ AWS Amplify (Cognito + API)
   amplify_flutter: ^2.8.0
   amplify_auth_cognito: ^2.8.0
-  amplify_api: ^2.8.0     # 👈 AGGIUNTO
+  amplify_api: ^2.8.0
 
   # ⭐ Persistenza locale
   hive: ^2.2.3
@@ -32,6 +32,9 @@ dependencies:
 
   # ⭐ Preferenze locali
   shared_preferences: ^2.2.2
+
+  # ⭐ Animazioni Lottie
+  lottie: ^3.3.2
 
 dev_dependencies:
   flutter_test:
@@ -55,4 +58,6 @@ flutter_native_splash:
 flutter:
   uses-material-design: true
   assets:
-    - assets/icon/     # 👈 CORRETTO
+    - assets/icon/
+    - assets/lottie/
+    - assets/images/

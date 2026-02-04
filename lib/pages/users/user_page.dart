@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/logiche/auth/auth_delete_service.dart';
 import 'package:tipicooo/logiche/auth/auth_state.dart';
 import 'package:tipicooo/logiche/navigation/app_routes.dart';
 
-// ⭐ Nuovo sistema notifiche
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
 import 'package:tipicooo/logiche/notifications/app_notification.dart';
 
@@ -13,6 +16,10 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:tipicooo/widgets/layout/app_body_layout.dart';
+
+import 'package:tipicooo/pages/waiting_room_page.dart';
+
+import 'package:url_launcher/url_launcher.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -55,6 +62,42 @@ class _UserPageState extends State<UserPage> {
     setState(() {
       fullName = computedName.trim();
     });
+  }
+
+  // ⭐ Decodifica JWT
+  Map<String, dynamic> _parseJwt(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) {
+      throw Exception('Token JWT non valido');
+    }
+
+    final payload = parts[1];
+    final normalized = base64Url.normalize(payload);
+    final decoded = utf8.decode(base64Url.decode(normalized));
+
+    return json.decode(decoded);
+  }
+
+  // ⭐ Controllo se l’utente è admin (gruppo Cognito)
+  Future<bool> _isAdmin() async {
+    try {
+      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+
+      final idToken = session.userPoolTokensResult.value.idToken.raw;
+
+      final payload = _parseJwt(idToken);
+
+      final groups = payload["cognito:groups"];
+
+      if (groups is List && groups.contains("admin")) {
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint("Errore controllo admin: $e");
+      return false;
+    }
   }
 
   Future<void> _logout() async {
@@ -148,7 +191,6 @@ class _UserPageState extends State<UserPage> {
       showProfile: true,
       showLogout: true,
       onLogout: _logout,
-
       body: AppBodyLayout(
         children: [
           if (fullName == null) ...[
@@ -167,11 +209,10 @@ class _UserPageState extends State<UserPage> {
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 30),
           ],
 
-          // 🔵 BOTTONE: SUGGERISCI (corretto)
+          // 🔵 SUGGERISCI
           BlueNarrowButton(
             label: "Suggerisci ai miei contatti",
             icon: Icons.lightbulb_outline,
@@ -182,7 +223,7 @@ class _UserPageState extends State<UserPage> {
 
           const SizedBox(height: 20),
 
-          // 🔵 NUOVO BOTTONE: REGISTRA ATTIVITÀ
+          // 🔵 REGISTRA ATTIVITÀ
           BlueNarrowButton(
             label: "Registra attività",
             icon: Icons.store_mall_directory,
@@ -192,18 +233,32 @@ class _UserPageState extends State<UserPage> {
           ),
 
           const SizedBox(height: 20),
-          // 🔵 NUOVO BOTTONE: ENTRA NEL TUO UFFICIO
-            BlueNarrowButton(
-              label: "Entra in ufficio",
-              icon: Icons.business_center,
-              onPressed: () {
-                // Nessuna logica, come richiesto
-              },
-            ),
 
-            const SizedBox(height: 20),
+          // 🔵 ENTRA IN UFFICIO (admin → Office, altri → Waiting Room)
+          BlueNarrowButton(
+            label: "Entra in ufficio",
+            icon: Icons.business_center,
+            onPressed: () async {
+              final admin = await _isAdmin();
 
-          // 🔴 BOTTONE ELIMINA PROFILO
+              if (admin) {
+                const officeUrl = "https://ilpassaparoladicarlo.com/office";
+                final uri = Uri.parse(officeUrl);
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const WaitingRoomPage(),
+                  ),
+                );
+              }
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // 🔴 ELIMINA PROFILO
           DangerButton(
             label: "Elimina Profilo",
             icon: Icons.delete_forever,

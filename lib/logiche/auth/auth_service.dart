@@ -52,7 +52,7 @@ class AuthService {
   }
 
   // ---------------------------------------------------------------------------
-  // LETTURA ATTRIBUTI UTENTE DAL TOKEN JWT
+  // LETTURA ATTRIBUTI UTENTE DAL TOKEN JWT (INCLUSO SUB)
   // ---------------------------------------------------------------------------
   Future<Map<String, String>> getUserAttributes() async {
     try {
@@ -65,6 +65,7 @@ class AuthService {
       final payload = _parseJwt(idToken);
 
       return {
+        "sub": payload["sub"] ?? "",
         "email": payload["email"] ?? "",
         "given_name": payload["given_name"] ?? "",
         "family_name": payload["family_name"] ?? "",
