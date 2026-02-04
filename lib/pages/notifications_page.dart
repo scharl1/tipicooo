@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/theme/app_colors.dart';
 
-// ⭐ Nuovo sistema notifiche
+// ⭐ Sistema notifiche
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
 import 'package:tipicooo/logiche/notifications/app_notification.dart';
 
@@ -18,7 +18,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   void initState() {
     super.initState();
 
-    // ⭐ Segna tutte le notifiche come lette DOPO il build iniziale
+    // ⭐ Segna tutte le notifiche come lette DOPO il primo frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationController.instance.markAllAsRead();
     });
@@ -33,8 +33,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
       showBack: true,
       showHome: false,
       showBell: false,
-      showProfile: true,   // ⭐ AGGIUNTO PER COERENZA
-      scrollable: false,   // ⭐ OBBLIGATORIO PER EVITARE CRASH
+      showProfile: true,
+      scrollable: false, // ⭐ Importante per evitare overflow
 
       body: notifications.isEmpty
           ? const Padding(
@@ -49,7 +49,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             )
           : Column(
               children: [
-                Expanded( // ⭐ FIX: ListView ha ora altezza valida
+                Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: notifications.length,

@@ -18,6 +18,9 @@ import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:tipicooo/widgets/layout/app_body_layout.dart';
 
 import 'package:tipicooo/pages/waiting_room_page.dart';
+import 'package:tipicooo/pages/access_pending_page.dart';
+
+import 'package:tipicooo/logiche/requests/user_request_service.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -234,7 +237,7 @@ class _UserPageState extends State<UserPage> {
 
           const SizedBox(height: 20),
 
-          // 🔵 ENTRA IN UFFICIO (admin → Office, altri → Waiting Room)
+          // 🔵 ENTRA IN UFFICIO — flusso completo
           BlueNarrowButton(
             label: "Entra in ufficio",
             icon: Icons.business_center,
@@ -245,13 +248,35 @@ class _UserPageState extends State<UserPage> {
                 const officeUrl = "https://ilpassaparoladicarlo.com/office";
                 final uri = Uri.parse(officeUrl);
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else {
+                return;
+              }
+
+              final status = await UserRequestService.getUserStatus();
+
+              final enabled = status["enabled"] == true;
+              final requested = status["requested"] == true;
+
+              if (enabled) {
+                const officeUrl = "https://ilpassaparoladicarlo.com/office";
+                final uri = Uri.parse(officeUrl);
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                return;
+              }
+
+              if (!requested) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const WaitingRoomPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const WaitingRoomPage()),
                 );
+                return;
+              }
+
+              if (requested && !enabled) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AccessPendingPage()),
+                );
+                return;
               }
             },
           ),

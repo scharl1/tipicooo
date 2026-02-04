@@ -1,26 +1,23 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:tipicooo/logiche/auth/auth_service.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 class UserRequestService {
   static const String baseUrl =
       "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
 
+  // ⭐ INVIO RICHIESTA ACCESSO
   static Future<bool> sendAccessRequest() async {
     try {
       // Recuperiamo l'ID utente da Cognito
-      final attributes = await AuthService.instance.getUserAttributes();
-      final userId = attributes["sub"];
+      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+      final idToken = session.userPoolTokensResult.value.idToken.raw;
 
-      if (userId == null) {
-        throw Exception("User ID non trovato");
-      }
-
-      // Recuperiamo l'ID Token per l'Authorization header
-      final idToken = await AuthService.instance.getIdToken();
-      if (idToken == null) {
-        throw Exception("ID Token non trovato");
-      }
+      final attributes = await Amplify.Auth.fetchUserAttributes();
+      final userId = attributes
+          .firstWhere((a) => a.userAttributeKey.key == "sub")
+          .value;
 
       final url = Uri.parse("$baseUrl/admin-request");
 
@@ -28,7 +25,6 @@ class UserRequestService {
         url,
         headers: {
           "Content-Type": "application/json",
-          // ⚠️ IMPORTANTE: niente "Bearer "
           "Authorization": idToken,
         },
         body: jsonEncode({
@@ -43,6 +39,48 @@ class UserRequestService {
     } catch (e) {
       print("Errore invio richiesta: $e");
       return false;
+    }
+  }
+
+  // ⭐ RECUPERO STATO UTENTE (abilitato / richiesta inviata)
+  static Future<Map<String, dynamic>> getUserStatus() async {
+    try {
+      // Recuperiamo l'ID Token Cognito VERO
+      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+      final idToken = session.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse("$baseUrl/admin-request/status");
+
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": idToken,
+        },
+      );
+
+      print("STATUS (getUserStatus): ${response.statusCode}");
+      print("BODY (getUserStatus): ${response.body}");
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+
+      if (response.statusCode == 404) {
+        return {
+          "enabled": false,
+          "requested": false,
+        };
+      }
+
+      throw Exception("Errore status utente: ${response.statusCode}");
+    } catch (e) {
+      print("Errore getUserStatus: $e");
+
+      return {
+        "enabled": false,
+        "requested": false,
+      };
     }
   }
 }

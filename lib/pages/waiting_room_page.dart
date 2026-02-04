@@ -4,6 +4,9 @@ import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:tipicooo/logiche/requests/user_request_service.dart';
 
+import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+import 'package:tipicooo/logiche/notifications/app_notification.dart';
+
 class WaitingRoomPage extends StatefulWidget {
   const WaitingRoomPage({super.key});
 
@@ -21,6 +24,19 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
     setState(() => isLoading = false);
 
+    if (success) {
+      // ⭐ CREA NOTIFICA
+      NotificationController.instance.addNotification(
+        AppNotification(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: "Richiesta inviata",
+          message:
+              "La tua richiesta di accesso a Tipic.ooo Office è in attesa di approvazione.",
+          timestamp: DateTime.now(),
+        ),
+      );
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -30,6 +46,11 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
         ),
       ),
     );
+
+    if (success) {
+      // ⭐ TORNA ALLA HOME
+      Navigator.pushReplacementNamed(context, "/home");
+    }
   }
 
   @override
