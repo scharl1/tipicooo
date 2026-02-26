@@ -40,6 +40,7 @@ import 'logiche/requests/purchase_service.dart';
 
 // NotificationController
 import 'logiche/notifications/notification_controller.dart';
+import 'logiche/notifications/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,7 @@ void main() async {
 
   // Carica notifiche salvate
   await NotificationController.instance.init();
+  await PushNotificationService.instance.init();
 
   // Inizializza Amplify/Cognito
   await AuthService.configure();

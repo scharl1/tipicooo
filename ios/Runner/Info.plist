@@ -60,5 +60,9 @@
 		</array>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>La posizione viene usata per mostrarti per prime le attività più vicine a te.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+		</array>
 	</dict>
 </plist>
