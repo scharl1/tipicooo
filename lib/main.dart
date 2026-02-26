@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
@@ -18,7 +20,7 @@ Future<String?> _exchangeOfficeCode(String code) async {
     );
 
     if (response.statusCode != 200) {
-      print("Errore exchange code: ${response.statusCode}");
+      debugPrint("Errore exchange code: ${response.statusCode}");
       return null;
     }
 
@@ -28,7 +30,7 @@ Future<String?> _exchangeOfficeCode(String code) async {
       return token;
     }
   } catch (e) {
-    print("Errore exchange code: $e");
+    debugPrint("Errore exchange code: $e");
   }
 
   return null;
@@ -57,12 +59,12 @@ void main() async {
   // ⭐ 2. Se presente, lo salviamo in localStorage
   if (token != null && token.isNotEmpty) {
     OfficeAuth.setToken(token);
-    print("TOKEN ADMIN SALVATO");
+    debugPrint("TOKEN ADMIN SALVATO");
 
     // Pulisci la query string (non lasciare code/token nell’URL)
     html.window.history.replaceState(null, '', uri.path);
   } else {
-    print("NESSUN TOKEN TROVATO NELL'URL");
+    debugPrint("NESSUN TOKEN TROVATO NELL'URL");
   }
 
   // ⭐ 3. Avviamo l’app (senza Amplify)

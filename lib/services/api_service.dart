@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:http/http.dart' as http;
@@ -10,6 +12,8 @@ class ApiService {
   static String? _getToken() {
     final token = html.window.localStorage["adminToken"];
     if (token == null || token.isEmpty) {
+      // Web office: debug log only.
+      // ignore: avoid_print
       print("⚠️ Nessun token admin trovato in localStorage");
     }
     return token;
