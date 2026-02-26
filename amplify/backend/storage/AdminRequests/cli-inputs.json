@@ -1,0 +1,10 @@
+{
+  "resourceName": "AdminRequests",
+  "tableName": "AdminRequests",
+  "partitionKey": {
+    "fieldName": "requestId",
+    "fieldType": "string"
+  },
+  "gsi": [],
+  "triggerFunctions": []
+}

@@ -1,0 +1,28 @@
+name: tipicooo_office
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  url_launcher: ^6.3.2
+  lottie: ^2.7.0
+  amplify_flutter: ^2.9.0
+  amplify_auth_cognito: ^2.9.0
+  google_maps_flutter: ^2.12.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

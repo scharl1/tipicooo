@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "paths": {
+    "/requests": {
+      "name": "/requests",
+      "lambdaFunction": "tipicoooofficeRequestsHandler",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ]
+      }
+    }
+  }
+}

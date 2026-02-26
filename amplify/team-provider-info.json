@@ -1,0 +1,33 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-tipicooooffice-dev-f7dbe-authRole",
+      "UnauthRoleArn": "arn:aws:iam::636192784500:role/amplify-tipicooooffice-dev-f7dbe-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::636192784500:role/amplify-tipicooooffice-dev-f7dbe-authRole",
+      "Region": "eu-central-1",
+      "DeploymentBucketName": "amplify-tipicooooffice-dev-f7dbe-deployment",
+      "UnauthRoleName": "amplify-tipicooooffice-dev-f7dbe-unauthRole",
+      "StackName": "amplify-tipicooooffice-dev-f7dbe",
+      "StackId": "arn:aws:cloudformation:eu-central-1:636192784500:stack/amplify-tipicooooffice-dev-f7dbe/09ef8d50-fff5-11f0-94cf-0a6bcc5ed425",
+      "AmplifyAppId": "d34c4oaw5hhj1m",
+      "APIGatewayAuthURL": "https://s3.amazonaws.com/amplify-tipicooooffice-dev-f7dbe-deployment/amplify-cfn-templates/api/APIGatewayAuthStack.json"
+    },
+    "categories": {
+      "auth": {
+        "tipicooooffice3f72d3d8": {}
+      },
+      "function": {
+        "tipicoooofficeRequestsHandler": {
+          "deploymentBucketName": "amplify-tipicooooffice-dev-f7dbe-deployment",
+          "s3Key": "amplify-builds/tipicoooofficeRequestsHandler-4f397848713779665855-build.zip"
+        }
+      },
+      "storage": {
+        "AdminRequests": {}
+      },
+      "api": {
+        "tipicoooofficeapi": {}
+      }
+    }
+  }
+}
