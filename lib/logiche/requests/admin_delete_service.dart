@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:tipicooo/logiche/auth/auth_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class AdminDeleteService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
 
   static Future<bool> deleteUser(String userId) async {
     try {

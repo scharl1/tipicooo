@@ -9,10 +9,11 @@ import 'auth_state.dart';
 import 'package:tipicooo/logiche/requests/user_request_service.dart';
 import 'package:tipicooo/logiche/requests/activity_request_service.dart';
 import 'package:tipicooo/logiche/requests/purchase_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class AuthDeleteService {
   static const String _baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
 
   Future<void> _logDeletedUser({
     required String reason,

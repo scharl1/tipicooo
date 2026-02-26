@@ -65,3 +65,10 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 #amplify-do-not-edit-end
+
+# Local temporary AWS/debug artifacts
+_tmp*/
+_tmp*.zip
+_tmp*.json
+_tmp*.patch
+_cleanup_targets.txt

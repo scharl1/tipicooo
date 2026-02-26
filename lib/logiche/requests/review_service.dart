@@ -4,10 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tipicooo/logiche/auth/auth_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class ReviewService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
 
   static const String _reviewsKeyBase = "purchase_reviews_map";
 

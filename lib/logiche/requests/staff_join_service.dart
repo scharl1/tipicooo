@@ -4,12 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/logiche/notifications/app_notification.dart';
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 import 'package:tipicooo/logiche/requests/activity_request_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StaffJoinService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
 
   static Future<Map<String, String>> _headers() async {
     final idToken = await AuthService.instance.getIdToken();

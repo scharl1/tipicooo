@@ -8,10 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
 import 'package:tipicooo/logiche/notifications/app_notification.dart';
 import 'package:tipicooo/logiche/auth/auth_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class UserRequestService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
   static const String _pendingKeyBase = "office_request_pending";
   static const String _lastRequestedKeyBase = "office_request_last_requested";
   static const String _approvedNotifiedKeyBase =

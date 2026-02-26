@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:tipicooo/logiche/auth/auth_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class CollaboratorsPage extends StatefulWidget {
   const CollaboratorsPage({super.key});
@@ -71,7 +72,7 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     final a = Uri.encodeComponent(requestId.trim());
     final m = Uri.encodeComponent(monthKey.trim());
     final url = Uri.parse(
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod/purchase-activity-month?activityRequestId=$a&month=$m&limit=300",
+      "${ApiEndpoints.adminBaseUrl}/purchase-activity-month?activityRequestId=$a&month=$m&limit=300",
     );
 
     try {
@@ -115,7 +116,7 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     if (token == null) return <_CollaboratorRow>[];
 
     final approvedUrl = Uri.parse(
-      "https://efs0gx9nm4.execute-api.eu-south-1.amazonaws.com/prod/activity-requests?status=approved",
+      "${ApiEndpoints.activityBaseUrl}/activity-requests?status=approved",
     );
     final approvedRes = await http.get(
       approvedUrl,

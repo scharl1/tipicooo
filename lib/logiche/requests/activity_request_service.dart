@@ -9,12 +9,13 @@ import 'package:tipicooo/logiche/notifications/notification_controller.dart';
 import 'package:tipicooo/logiche/notifications/app_notification.dart';
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/logiche/requests/activity_photos_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class ActivityRequestService {
   static const String baseUrl =
-      "https://efs0gx9nm4.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.activityBaseUrl;
   static const String _officeGatewayBaseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
   static const String _activityStatusKeyBase = "activity_request_last_status";
   static const String _activityApprovedNotifiedKeyBase =
       "activity_request_approved_notified";

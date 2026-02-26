@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:tipicooo/logiche/auth/auth_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class AdminService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
 
   static Future<Map<String, String>> _headers() async {
     final idToken = await AuthService.instance.getIdToken();

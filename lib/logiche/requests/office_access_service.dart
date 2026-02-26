@@ -3,10 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class OfficeAccessService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
   static DateTime? _lastLaunchAt;
   static const Duration _launchCooldown = Duration(seconds: 20);
 

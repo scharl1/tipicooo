@@ -5,10 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tipicooo/logiche/notifications/app_notification.dart';
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class CollaboratorRequestService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
   static const String _pendingKeyBase = "collaborator_request_pending";
   static const String _lastRequestedKeyBase =
       "collaborator_request_last_requested";

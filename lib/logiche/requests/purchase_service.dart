@@ -9,10 +9,11 @@ import 'package:tipicooo/logiche/notifications/app_notification.dart';
 import 'package:tipicooo/logiche/requests/activity_request_service.dart';
 import 'package:tipicooo/logiche/requests/staff_join_service.dart';
 import 'package:tipicooo/logiche/requests/review_service.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 
 class PurchaseService {
   static const String baseUrl =
-      "https://dvyo7vax1g.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.adminBaseUrl;
   static String? _lastCreatePurchaseError;
 
   static String? get lastCreatePurchaseError => _lastCreatePurchaseError;

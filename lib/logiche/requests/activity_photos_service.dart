@@ -3,11 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import 'package:tipicooo/logiche/config/api_endpoints.dart';
 import 'file_bytes.dart';
 
 class ActivityPhotosService {
   static const String baseUrl =
-      "https://efs0gx9nm4.execute-api.eu-south-1.amazonaws.com/prod";
+      ApiEndpoints.activityBaseUrl;
 
   static Future<Map<String, dynamic>?> _presign({
     required String requestId,
