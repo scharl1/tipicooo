@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 
@@ -13,9 +14,8 @@ class AdminDeleteService {
         throw Exception("ID Token non trovato");
       }
 
-      // 🔵 STAMPA IL TOKEN CHE STAI USANDO
-      print("🔵 TOKEN USATO PER DELETE:");
-      print(idToken);
+      // Debug non sensibile: non stampiamo token in chiaro.
+      debugPrint("AdminDeleteService: delete-user-admin request avviata");
 
       final url = Uri.parse("$baseUrl/delete-user-admin");
 
@@ -32,7 +32,7 @@ class AdminDeleteService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print("Errore deleteUserAdmin: $e");
+      debugPrint("Errore deleteUserAdmin: $e");
       return false;
     }
   }

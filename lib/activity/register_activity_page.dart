@@ -12,12 +12,20 @@ import 'package:tipicooo/hive/hive_photos_controller.dart';
 import 'widgets/photo_preview.dart';
 import 'widgets/add_photo_box.dart';
 
-
 // IMPORT CORRETTO (UNICO)
 import 'upload_picker.dart';
 
-class RegisterActivityPage extends StatelessWidget {
+class RegisterActivityPage extends StatefulWidget {
   const RegisterActivityPage({super.key});
+
+  @override
+  State<RegisterActivityPage> createState() => _RegisterActivityPageState();
+}
+
+enum UserRoleType { owner, association, delegate }
+
+class _RegisterActivityPageState extends State<RegisterActivityPage> {
+  UserRoleType? _roleType;
 
   Widget buildInputBox({
     required String label,
@@ -37,12 +45,139 @@ class RegisterActivityPage extends StatelessWidget {
         controller: TextEditingController(text: initialValue),
         keyboardType: keyboardType,
         onChanged: (value) => HiveRegisterActivity.saveField(hiveKey, value),
-        decoration: InputDecoration(
-          labelText: label,
-          border: InputBorder.none,
+        decoration: InputDecoration(labelText: label, border: InputBorder.none),
+      ),
+    );
+  }
+
+  Widget _roleButton({required String label, required UserRoleType value}) {
+    final isSelected = _roleType == value;
+
+    return InkWell(
+      onTap: () => setState(() => _roleType = value),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryBlue.withValues(alpha: 0.1)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryBlue : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: AppTextStyles.body.copyWith(
+              color: isSelected ? AppColors.primaryBlue : AppColors.black,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Widget _uploadBox({required String label}) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.picture_as_pdf, color: AppColors.primaryBlue),
+            const SizedBox(width: 12),
+            Expanded(child: Text(label, style: AppTextStyles.body)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _roleDocuments() {
+    if (_roleType == null) return const SizedBox.shrink();
+
+    switch (_roleType!) {
+      case UserRoleType.owner:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SizedBox(height: 16),
+            Text("Documento richiesto", style: AppTextStyles.sectionTitle),
+            SizedBox(height: 8),
+            Text(
+              "Per attività commerciali serve la visura camerale.",
+              style: AppTextStyles.body,
+            ),
+          ],
+        );
+      case UserRoleType.association:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SizedBox(height: 16),
+            Text("Documenti richiesti", style: AppTextStyles.sectionTitle),
+            SizedBox(height: 8),
+            Text(
+              "Atto costitutivo, Statuto, eventuale iscrizione (es. RUNTS) e documento del legale rappresentante.",
+              style: AppTextStyles.body,
+            ),
+          ],
+        );
+      case UserRoleType.delegate:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SizedBox(height: 16),
+            Text("Documenti richiesti", style: AppTextStyles.sectionTitle),
+            SizedBox(height: 8),
+            Text(
+              "Delega/lettera di incarico firmata + documento del delegante e del delegato.",
+              style: AppTextStyles.body,
+            ),
+          ],
+        );
+    }
+  }
+
+  List<Widget> _roleUploads() {
+    if (_roleType == null) return const [];
+
+    switch (_roleType!) {
+      case UserRoleType.owner:
+        return [
+          const SizedBox(height: 12),
+          _uploadBox(label: "Carica Visura Camerale (PDF)"),
+        ];
+      case UserRoleType.association:
+        return [
+          const SizedBox(height: 12),
+          _uploadBox(label: "Carica Atto costitutivo (PDF)"),
+          const SizedBox(height: 12),
+          _uploadBox(label: "Carica Statuto (PDF)"),
+          const SizedBox(height: 12),
+          _uploadBox(label: "Carica iscrizione (se presente) (PDF)"),
+          const SizedBox(height: 12),
+          _uploadBox(label: "Documento legale rappresentante (PDF)"),
+        ];
+      case UserRoleType.delegate:
+        return [
+          const SizedBox(height: 12),
+          _uploadBox(label: "Carica delega/lettera incarico (PDF)"),
+          const SizedBox(height: 12),
+          _uploadBox(label: "Documento delegante (PDF)"),
+          const SizedBox(height: 12),
+          _uploadBox(label: "Documento delegato (PDF)"),
+        ];
+    }
   }
 
   @override
@@ -52,6 +187,7 @@ class RegisterActivityPage extends StatelessWidget {
       child: Builder(
         builder: (context) {
           return BasePage(
+            scrollable: false,
             headerTitle: "Registra attività",
             showBack: true,
             showHome: true,
@@ -68,13 +204,19 @@ class RegisterActivityPage extends StatelessWidget {
 
                 const SizedBox(height: 26),
 
-                buildInputBox(label: "Tipo di attività", hiveKey: "tipo_attivita"),
+                buildInputBox(
+                  label: "Tipo di attività",
+                  hiveKey: "tipo_attivita",
+                ),
                 const SizedBox(height: 14),
 
                 buildInputBox(label: "Insegna attività", hiveKey: "insegna"),
                 const SizedBox(height: 14),
 
-                buildInputBox(label: "Ragione sociale", hiveKey: "ragione_sociale"),
+                buildInputBox(
+                  label: "Ragione sociale",
+                  hiveKey: "ragione_sociale",
+                ),
                 const SizedBox(height: 14),
 
                 buildInputBox(label: "Via", hiveKey: "via"),
@@ -170,37 +312,10 @@ class RegisterActivityPage extends StatelessWidget {
 
                 const SizedBox(height: 26),
 
-                GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.picture_as_pdf, color: AppColors.primaryBlue),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            "Carica Visura Camerale (PDF)",
-                            style: AppTextStyles.body,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
                 const SizedBox(height: 34),
 
-                // ---------------------------------------------------------
-                // NUOVA SEZIONE: Sei il gestore?
-                // ---------------------------------------------------------
                 const Text(
-                  "Sei il gestore, presidente o responsabile dell’attività?",
+                  "Seleziona il tuo ruolo",
                   style: AppTextStyles.sectionTitle,
                   textAlign: TextAlign.center,
                 ),
@@ -208,48 +323,38 @@ class RegisterActivityPage extends StatelessWidget {
                 const SizedBox(height: 18),
 
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "Sì",
-                            style: AppTextStyles.body,
-                          ),
-                        ),
+                      child: _roleButton(
+                        label: "Gestore / Libero professionista",
+                        value: UserRoleType.owner,
                       ),
                     ),
-
-                    const SizedBox(width: 16),
-
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "No",
-                            style: AppTextStyles.body,
-                          ),
-                        ),
+                      child: _roleButton(
+                        label: "Associazione/Ente",
+                        value: UserRoleType.association,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _roleButton(
+                        label: "Responsabile/Dipendente",
+                        value: UserRoleType.delegate,
                       ),
                     ),
                   ],
                 ),
 
+                _roleDocuments(),
+                ..._roleUploads(),
+
                 const SizedBox(height: 34),
-                // ---------------------------------------------------------
               ],
             ),
           );

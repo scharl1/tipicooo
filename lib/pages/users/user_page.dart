@@ -1,26 +1,17 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
-
 import 'package:tipicooo/logiche/auth/auth_service.dart';
-import 'package:tipicooo/logiche/auth/auth_delete_service.dart';
-import 'package:tipicooo/logiche/auth/auth_state.dart';
 import 'package:tipicooo/logiche/navigation/app_routes.dart';
-
-import 'package:tipicooo/logiche/notifications/notification_controller.dart';
-import 'package:tipicooo/logiche/notifications/app_notification.dart';
-
-import '../../widgets/base_page.dart';
+import 'package:tipicooo/widgets/base_page.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:tipicooo/widgets/layout/app_body_layout.dart';
 
 import 'package:tipicooo/pages/waiting_room_page.dart';
-import 'package:tipicooo/pages/access_pending_page.dart';
 
 import 'package:tipicooo/logiche/requests/user_request_service.dart';
+import 'package:tipicooo/logiche/requests/office_access_service.dart';
+import 'package:tipicooo/logiche/requests/activity_request_service.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,14 +23,20 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
+  static const String _primaryAdminEmail = "carlo.mertolini@gmail.com";
   String? fullName;
-
-  final AuthDeleteService _deleteService = AuthDeleteService();
+  bool _isOpeningOffice = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _syncOfficeStatusAndNotifications();
+  }
+
+  Future<void> _syncOfficeStatusAndNotifications() async {
+    await UserRequestService.getUserStatus();
+    await ActivityRequestService.checkLatestStatus();
   }
 
   Future<void> _loadUserData() async {
@@ -49,7 +46,7 @@ class _UserPageState extends State<UserPage> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
-        AppRoutes.login,
+        AppRoutes.home,
         (route) => false,
       );
       return;
@@ -58,8 +55,9 @@ class _UserPageState extends State<UserPage> {
     final name = attributes['given_name'] ?? "";
     final emailFallback = attributes['email'] ?? "Utente";
 
-    final computedName =
-        name.isNotEmpty ? name.split(" ").first : emailFallback;
+    final computedName = name.isNotEmpty
+        ? name.split(" ").first
+        : emailFallback;
 
     if (!mounted) return;
     setState(() {
@@ -67,48 +65,9 @@ class _UserPageState extends State<UserPage> {
     });
   }
 
-  // ⭐ Decodifica JWT
-  Map<String, dynamic> _parseJwt(String token) {
-    final parts = token.split('.');
-    if (parts.length != 3) {
-      throw Exception('Token JWT non valido');
-    }
-
-    final payload = parts[1];
-    final normalized = base64Url.normalize(payload);
-    final decoded = utf8.decode(base64Url.decode(normalized));
-
-    return json.decode(decoded);
-  }
-
-  // ⭐ Controllo se l’utente è admin (gruppo Cognito)
-  Future<bool> _isAdmin() async {
-    try {
-      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
-
-      final idToken = session.userPoolTokensResult.value.idToken.raw;
-
-      final payload = _parseJwt(idToken);
-
-      final groups = payload["cognito:groups"];
-
-      if (groups is List && groups.contains("admin")) {
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint("Errore controllo admin: $e");
-      return false;
-    }
-  }
-
   Future<void> _logout() async {
-    try {
-      await AuthService.instance.logout();
-    } catch (e) {
-      debugPrint("Errore logout: $e");
-    }
+    // AuthService.logout ora non blocca sul signOut remoto.
+    await AuthService.instance.logout();
 
     if (!mounted) return;
 
@@ -119,78 +78,93 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
-  Future<void> _confirmDelete() async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            "Elimina Profilo",
-            style: AppTextStyles.body,
-          ),
-          content: const Text(
-            "Sei sicuro di voler eliminare definitivamente il tuo profilo?",
-            style: AppTextStyles.body,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text(
-                "Annulla",
-                style: AppTextStyles.body,
-              ),
+  Future<void> _openOffice({bool skipStatusCheck = false}) async {
+    if (!OfficeAccessService.canOpenOfficeNow()) {
+      final left = OfficeAccessService.remainingCooldown().inSeconds;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Ufficio già aperto. Attendi ${left > 0 ? left : 1} secondi.",
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                "Elimina",
-                style: AppTextStyles.body.copyWith(color: Colors.red),
-              ),
-            ),
-          ],
+          ),
         );
-      },
-    );
+      }
+      return;
+    }
 
-    if (confirm != true) return;
+    if (!skipStatusCheck) {
+      // Verifica stato accesso prima di aprire l’ufficio
+      final status = await UserRequestService.getUserStatus();
+      final enabled = status["enabled"] == true;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryBlue),
-      ),
-    );
+      if (!enabled) {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const WaitingRoomPage()),
+        );
+        return;
+      }
+    }
 
-    await _deleteService.deleteCurrentUser();
+    final code = await OfficeAccessService.requestOfficeCode();
 
-    AuthState.setLoggedOut();
+    if (code == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Errore: impossibile aprire l'ufficio.")),
+      );
+      return;
+    }
 
-    NotificationController.instance.addNotification(
-      AppNotification(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: 'Profilo eliminato',
-        message: 'Il tuo profilo è stato eliminato con successo.',
-        timestamp: DateTime.now(),
-      ),
-    );
+    final officeUrl = "https://ilpassaparoladicarlo.com/office/?code=$code";
 
-    Navigator.of(context).pop();
+    OfficeAccessService.markOfficeOpenedNow();
+    await launchUrl(Uri.parse(officeUrl), mode: LaunchMode.externalApplication);
+  }
 
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.home,
-      (route) => false,
-      arguments: {'deleted': true},
-    );
+  Future<void> _handleOpenOfficeTap() async {
+    if (_isOpeningOffice) return;
+    setState(() => _isOpeningOffice = true);
+    try {
+      final attrs = await AuthService.instance.getUserAttributes();
+      final email = (attrs["email"] ?? "").trim().toLowerCase();
+      final isPrimaryAdmin = email == _primaryAdminEmail;
+
+      if (isPrimaryAdmin) {
+        await _openOffice(skipStatusCheck: true);
+        return;
+      }
+
+      final status = await UserRequestService.getUserStatus();
+      final enabled = status["enabled"] == true;
+
+      if (!enabled) {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const WaitingRoomPage()),
+        );
+        return;
+      }
+
+      await _openOffice();
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningOffice = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return BasePage(
+      scrollable: false,
       headerTitle: 'Benvenuto',
       showHome: true,
       showBack: false,
-      showBell: false,
+      showBell: true,
       showProfile: true,
       showLogout: true,
       onLogout: _logout,
@@ -215,23 +189,31 @@ class _UserPageState extends State<UserPage> {
             const SizedBox(height: 30),
           ],
 
-          // 🔵 SUGGERISCI
           BlueNarrowButton(
-            label: "Suggerisci ai miei contatti",
-            icon: Icons.lightbulb_outline,
+            label: "Attività",
+            icon: Icons.factory_outlined,
             onPressed: () {
-              Navigator.pushNamed(context, '/suggest');
+              Navigator.pushNamed(context, AppRoutes.userActivities);
             },
           ),
 
           const SizedBox(height: 20),
 
-          // 🔵 REGISTRA ATTIVITÀ
           BlueNarrowButton(
-            label: "Registra attività",
-            icon: Icons.store_mall_directory,
+            label: "Portafoglio",
+            icon: Icons.trending_up,
             onPressed: () {
-              Navigator.pushNamed(context, '/register_activity');
+              Navigator.pushNamed(context, AppRoutes.userActions);
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          BlueNarrowButton(
+            label: "Profilo",
+            icon: Icons.person_outline,
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.profile);
             },
           ),
 
@@ -239,56 +221,15 @@ class _UserPageState extends State<UserPage> {
 
           // 🔵 ENTRA IN UFFICIO — flusso completo
           BlueNarrowButton(
-            label: "Entra in ufficio",
+            label: _isOpeningOffice ? "Attendi..." : "Ufficio",
             icon: Icons.business_center,
-            onPressed: () async {
-              final admin = await _isAdmin();
-
-              if (admin) {
-                const officeUrl = "https://ilpassaparoladicarlo.com/office";
-                final uri = Uri.parse(officeUrl);
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-                return;
-              }
-
-              final status = await UserRequestService.getUserStatus();
-
-              final enabled = status["enabled"] == true;
-              final requested = status["requested"] == true;
-
-              if (enabled) {
-                const officeUrl = "https://ilpassaparoladicarlo.com/office";
-                final uri = Uri.parse(officeUrl);
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-                return;
-              }
-
-              if (!requested) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const WaitingRoomPage()),
-                );
-                return;
-              }
-
-              if (requested && !enabled) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AccessPendingPage()),
-                );
-                return;
-              }
-            },
+            onPressed: _isOpeningOffice ? () {} : _handleOpenOfficeTap,
           ),
+          if (_isOpeningOffice) ...[
+            const SizedBox(height: 10),
+            const CircularProgressIndicator(color: AppColors.primaryBlue),
+          ],
 
-          const SizedBox(height: 20),
-
-          // 🔴 ELIMINA PROFILO
-          DangerButton(
-            label: "Elimina Profilo",
-            icon: Icons.delete_forever,
-            onPressed: _confirmDelete,
-          ),
         ],
       ),
     );

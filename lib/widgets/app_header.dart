@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_icons.dart';
 import '../logiche/navigation/header_routes.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 // ⭐ Nuovo sistema notifiche
 import 'package:tipicooo/logiche/notifications/notification_controller.dart';
@@ -19,6 +23,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   // ⭐ Callback esterna per il logout
   final VoidCallback? onLogout;
+  final VoidCallback? onBackPressed;
 
   const AppHeader({
     super.key,
@@ -29,6 +34,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     this.showLogout = false,
     this.showProfile = false,
     this.onLogout,
+    this.onBackPressed,
   });
 
   @override
@@ -55,14 +61,19 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   /// Costruisce l’icona a sinistra (Back o Home)
   Widget? _buildLeftIcon(BuildContext context) {
-    if (showBack) {
+    final canGoBack = Navigator.canPop(context);
+    final shouldShowBack = showBack || (!showHome && canGoBack);
+
+    if (shouldShowBack) {
       return IconButton(
         icon: const Icon(AppIcons.back, color: AppColors.white),
         onPressed: () {
-          // ⭐ Comportamento corretto:
-          // - Se può tornare indietro → torna indietro
-          // - Altrimenti → vai alla Home
-          if (Navigator.canPop(context)) {
+          if (onBackPressed != null) {
+            onBackPressed!();
+            return;
+          }
+          // Se può tornare indietro torna indietro, altrimenti va in Home.
+          if (canGoBack) {
             Navigator.pop(context);
           } else {
             HeaderRoutes.navigateToHome(context);
@@ -88,16 +99,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
     if (showProfile) {
       icons.add(
-        IconButton(
-          icon: const Icon(AppIcons.user, color: AppColors.white),
-          onPressed: () {
-            if (loggedIn) {
-              HeaderRoutes.goToUserPage(context);
-            } else {
-              HeaderRoutes.goToProfile(context);
-            }
-          },
-        ),
+        _buildProfileIconButton(context, loggedIn),
       );
     }
 
@@ -144,6 +146,118 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return icons;
+  }
+
+  Widget _buildProfileIconButton(BuildContext context, bool loggedIn) {
+    void onTap() {
+      if (loggedIn) {
+        HeaderRoutes.goToUserPage(context);
+      } else {
+        HeaderRoutes.goToProfile(context);
+      }
+    }
+
+    if (!loggedIn) {
+      return IconButton(
+        icon: const Icon(AppIcons.user, color: AppColors.white),
+        onPressed: onTap,
+      );
+    }
+
+    if (!Hive.isBoxOpen('profile')) {
+      return IconButton(
+        icon: const Icon(AppIcons.user, color: AppColors.white),
+        onPressed: onTap,
+      );
+    }
+
+    final box = Hive.box('profile');
+    return ValueListenableBuilder(
+      valueListenable: box.listenable(),
+      builder: (context, _, __) {
+        final b64 = (box.get('avatar_bytes_b64') ?? "").toString().trim();
+        final rawBytes = box.get('avatar_bytes');
+        final localPath = (box.get('avatar_local_path') ?? "")
+            .toString()
+            .trim();
+
+        Widget fallbackIcon() => IconButton(
+              icon: const Icon(AppIcons.user, color: AppColors.white),
+              onPressed: onTap,
+            );
+
+        Widget wrapAvatar(Widget child) => IconButton(
+              onPressed: onTap,
+              icon: Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                clipBehavior: Clip.antiAlias,
+                child: child,
+              ),
+            );
+
+        if (rawBytes is Uint8List && rawBytes.isNotEmpty) {
+          return wrapAvatar(
+            Image.memory(
+              rawBytes,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(AppIcons.user, color: AppColors.white, size: 20),
+            ),
+          );
+        }
+
+        if (rawBytes is List && rawBytes.isNotEmpty) {
+          try {
+            final bytes = Uint8List.fromList(
+              rawBytes.map((e) => (e as num).toInt()).toList(),
+            );
+            return wrapAvatar(
+              Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => const Icon(
+                  AppIcons.user,
+                  color: AppColors.white,
+                  size: 20,
+                ),
+              ),
+            );
+          } catch (_) {}
+        }
+
+        if (b64.isNotEmpty) {
+          try {
+            final bytes = base64Decode(b64);
+            return wrapAvatar(
+              Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(AppIcons.user, color: AppColors.white, size: 20),
+              ),
+            );
+          } catch (_) {}
+        }
+
+        if (!kIsWeb && localPath.isNotEmpty) {
+          return wrapAvatar(
+            Image.file(
+              File(localPath),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(AppIcons.user, color: AppColors.white, size: 20),
+            ),
+          );
+        }
+
+        return fallbackIcon();
+      },
+    );
   }
 
   @override

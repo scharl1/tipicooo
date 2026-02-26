@@ -16,6 +16,7 @@ dependencies:
   amplify_flutter: ^2.8.0
   amplify_auth_cognito: ^2.8.0
   amplify_api: ^2.8.0
+  http: ^1.6.0
 
   # ⭐ Persistenza locale
   hive: ^2.2.3
@@ -32,9 +33,16 @@ dependencies:
 
   # ⭐ Preferenze locali
   shared_preferences: ^2.2.2
+  share_plus: ^10.0.2
 
   # ⭐ Animazioni Lottie
   lottie: ^3.3.2
+  flutter_map: ^6.2.1
+  flutter_map_cancellable_tile_provider: ^2.0.0
+  latlong2: ^0.9.1
+  geolocator: ^13.0.2
+  flutter_app_badger: ^1.5.0
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

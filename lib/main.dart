@@ -7,13 +7,18 @@ import 'hive/hive_boxes.dart';
 
 // Pagine
 import 'pages/profile_page.dart';
-import 'pages/users/signup_page.dart';
-import 'pages/users/login_page.dart';
 import 'pages/users/user_page.dart';
+import 'pages/users/user_cashback_page.dart';
+import 'pages/users/create_purchase_page.dart';
+import 'pages/users/activity_payments_page.dart';
+import 'pages/users/user_activities_page.dart';
+import 'pages/users/user_actions_page.dart';
+import 'pages/users/affiliate_activity_page.dart';
+import 'pages/users/affiliate_activity_status_page.dart';
+import 'pages/drivers_page.dart';
 import 'pages/search_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/notifications_page.dart';
-import 'pages/test_page.dart';
 import 'pages/home_page.dart';
 import 'pages/init_page.dart';
 
@@ -23,12 +28,15 @@ import 'pages/users/suggest/suggest_user.dart';
 import 'pages/users/suggest/suggest_activity_page.dart';
 
 // Pagina registrazione attività
-import 'activity/register_activity_page.dart';
+import 'activity/register_activity_v2_page.dart';
 
 // Logiche
 import 'logiche/auth/auth_service.dart';
 import 'logiche/navigation/app_routes.dart';
 import 'logiche/auth/auth_state.dart';
+import 'logiche/requests/user_request_service.dart';
+import 'logiche/requests/activity_request_service.dart';
+import 'logiche/requests/purchase_service.dart';
 
 // NotificationController
 import 'logiche/notifications/notification_controller.dart';
@@ -45,6 +53,9 @@ void main() async {
   // Box registrazione attività
   await Hive.openBox(HiveBoxes.registerActivity);
 
+  // Box profilo (avatar ecc.)
+  await Hive.openBox('profile');
+
   // Carica notifiche salvate
   await NotificationController.instance.init();
 
@@ -53,6 +64,13 @@ void main() async {
 
   // Inizializza lo stato login leggendo Cognito
   await AuthState.initialize();
+
+  // Se la sessione Cognito e' gia' valida (es. app riaperta), avvia i polling.
+  if (AuthState.isUserLoggedIn) {
+    await UserRequestService.startAdminPolling();
+    await ActivityRequestService.startAdminPolling();
+    await PurchaseService.startActivityPolling();
+  }
 
   runApp(const MyApp());
 }
@@ -90,18 +108,51 @@ class MyApp extends StatelessWidget {
         AppRoutes.suggestActivity: (context) => const SuggestActivityPage(),
 
         // Registra attività
-        AppRoutes.registerActivity: (context) => const RegisterActivityPage(),
+        AppRoutes.registerActivity: (context) => const RegisterActivityV2Page(),
+
+        // Le tue attività
+        AppRoutes.userActivities: (context) => const UserActivitiesPage(),
+
+        // Le mie azioni
+        AppRoutes.userActions: (context) => const UserActionsPage(),
+
+        // I tuoi cashback
+        AppRoutes.userCashback: (context) => const UserCashbackPage(),
+
+        // Affilia attività
+        AppRoutes.affiliateActivity: (context) => const AffiliateActivityPage(),
+        AppRoutes.affiliateActivityStatus: (context) =>
+            const AffiliateActivityStatusPage(),
+
+        // Sei un autista
+        AppRoutes.drivers: (context) => const DriversPage(),
+
+        // Registra pagamento (cashback)
+        AppRoutes.createPurchase: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map?;
+          final activityRequestId = (args?["activityRequestId"] ?? "").toString();
+          final activityTitle = (args?["activityTitle"] ?? "Attività").toString();
+          return CreatePurchasePage(
+            activityRequestId: activityRequestId,
+            activityTitle: activityTitle,
+          );
+        },
+
+        // Accetta pagamenti (per attività registrate)
+        AppRoutes.activityPayments: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map?;
+          final activityRequestId = (args?["activityRequestId"] ?? "").toString();
+          return ActivityPaymentsPage(
+            activityRequestId: activityRequestId.isEmpty ? null : activityRequestId,
+          );
+        },
 
         // Pagine generali
         AppRoutes.profile: (context) => ProfilePage(),
-        AppRoutes.signup: (context) => SignupPage(),
-        AppRoutes.login: (context) => LoginPage(),
         AppRoutes.search: (context) => SearchPage(),
         AppRoutes.favorites: (context) => FavoritesPage(),
         AppRoutes.notifications: (context) => NotificationsPage(),
 
-        // TestPage
-        AppRoutes.testPage: (context) => TestPage(),
       },
     );
   }

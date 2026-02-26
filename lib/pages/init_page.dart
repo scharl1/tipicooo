@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:tipicooo/logiche/auth/auth_service.dart';
 import 'package:tipicooo/logiche/auth/auth_state.dart';
 import 'package:tipicooo/logiche/navigation/app_routes.dart';
+import 'package:tipicooo/logiche/requests/user_request_service.dart';
+import 'package:tipicooo/logiche/requests/activity_request_service.dart';
 
 import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/theme/app_colors.dart';
@@ -29,21 +30,16 @@ class _InitPageState extends State<InitPage> {
 
     // 2) Inizializza AuthState
     await AuthState.initialize();
-
-    // 3) Controlla pending email
-    final prefs = await SharedPreferences.getInstance();
-    final pendingEmail = prefs.getString("pending_email");
-
-    // 4) Routing logico
+    // 3) Routing logico
     if (AuthState.isUserLoggedIn) {
-      // Utente loggato → vai alla UserPage
-      _go(AppRoutes.user);
-      return;
-    }
-
-    if (pendingEmail != null) {
-      // Utente non loggato ma con OTP da confermare → SignupPage (OTP)
-      _go(AppRoutes.signup);
+      // Utente loggato → aggiorna stato per notifiche e atterra in Home
+      await UserRequestService.resetAdminPendingCount();
+      await ActivityRequestService.resetAdminPendingCount();
+      await UserRequestService.getUserStatus();
+      await UserRequestService.startAdminPolling();
+      await ActivityRequestService.startAdminPolling();
+      await ActivityRequestService.checkLatestStatus();
+      _go(AppRoutes.home);
       return;
     }
 

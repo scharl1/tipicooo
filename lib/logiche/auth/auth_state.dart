@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthState {
@@ -46,13 +47,14 @@ class AuthState {
   static Future<void> setLoggedOut() async {
     isLoggedIn.value = false;
     _currentUser = null;
-    await _clearLocalState();
+    unawaited(_clearLocalState());
   }
 
   /// 🔥 Pulisce eventuali dati locali (pending email OTP, ecc.)
   static Future<void> _clearLocalState() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.remove("pending_email");
+    prefs.remove("office_request_pending");
   }
 
   /// 🔥 Metodo comodo per routing

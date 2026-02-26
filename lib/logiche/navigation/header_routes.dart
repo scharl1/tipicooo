@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
 import '../auth/auth_state.dart';
+import '../auth/auth_service.dart';
 import 'app_routes.dart';
 
 /// Funzioni centralizzate per la navigazione dall'header.
@@ -34,13 +34,11 @@ class HeaderRoutes {
     Navigator.pushNamed(context, AppRoutes.user);
   }
 
-  /// 🔥 LOGOUT REALE CON COGNITO + RIMOZIONE STACK
+  /// Logout rapido lato UI: reset locale immediato e signOut remoto in background.
   static Future<void> logout(BuildContext context) async {
     try {
-      // Logout globale Cognito → invalida tutte le sessioni
-      await Amplify.Auth.signOut(
-        options: const SignOutOptions(globalSignOut: true),
-      );
+      await AuthService.instance.logout();
+      if (!context.mounted) return;
 
       // Torna alla HOME e rimuove tutto lo stack
       Navigator.pushNamedAndRemoveUntil(
@@ -48,9 +46,10 @@ class HeaderRoutes {
         AppRoutes.home,
         (route) => false,
       );
-    } on AuthException catch (e) {
+    } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Errore durante il logout: ${e.message}")),
+        SnackBar(content: Text("Errore durante il logout: $e")),
       );
     }
   }

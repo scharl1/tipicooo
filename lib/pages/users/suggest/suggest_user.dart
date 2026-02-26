@@ -1,21 +1,87 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 
-class SuggestUserPage extends StatelessWidget {
+class SuggestUserPage extends StatefulWidget {
+  const SuggestUserPage({super.key, required this.userId});
+
   final String userId;
 
-  const SuggestUserPage({super.key, required this.userId});
+  @override
+  State<SuggestUserPage> createState() => _SuggestUserPageState();
+}
+
+class _SuggestUserPageState extends State<SuggestUserPage> {
+  bool _savingQr = false;
+
+  String get _referralLink =>
+      "https://ilpassaparoladicarlo.com/benvenuti-in-tipic-ooo/?ref=${widget.userId}";
+
+  Future<void> _saveQrToGallery() async {
+    if (_savingQr) return;
+    setState(() => _savingQr = true);
+    try {
+      final painter = QrPainter(
+        data: _referralLink,
+        version: QrVersions.auto,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Colors.black,
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Colors.black,
+        ),
+      );
+
+      final ByteData? data = await painter.toImageData(
+        1800,
+        format: ui.ImageByteFormat.png,
+      );
+      if (data == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Errore generazione QR.")),
+        );
+        return;
+      }
+
+      final Uint8List pngBytes = data.buffer.asUint8List();
+      final fileName =
+          "tipicooo_qr_invito_${DateTime.now().millisecondsSinceEpoch}.png";
+      final xFile = XFile.fromData(
+        pngBytes,
+        mimeType: "image/png",
+        name: fileName,
+      );
+      await Share.shareXFiles(
+        [xFile],
+        text: "QR invito Tipic.ooo",
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Errore esportazione QR."),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _savingQr = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final referralLink =
-        "https://ilpassaparoladicarlo.com/benvenuti-in-tipic-ooo/?ref=$userId";
-
     return BasePage(
-      headerTitle: "Invita con WhatsApp",
+      headerTitle: "Invita",
       showBack: true,
       scrollable: true,
       body: Padding(
@@ -23,123 +89,135 @@ class SuggestUserPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              "Invia il tuo link personale ai tuoi contatti su WhatsApp.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // 🔵 Link personale
+            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.black12),
               ),
-              child: Text(
-                referralLink,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14),
+              child: Column(
+                children: [
+                  const Text(
+                    "QR invito",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  QrImageView(
+                    data: _referralLink,
+                    version: QrVersions.auto,
+                    size: 170,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: Colors.black,
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Fai scannerizzare questo codice per aprire il tuo link invito.",
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  BlueNarrowButton(
+                    label: _savingQr ? "Preparazione..." : "Salva QR",
+                    icon: Icons.download_outlined,
+                    onPressed: _savingQr ? () {} : _saveQrToGallery,
+                  ),
+                ],
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // 🔵 Bottone WhatsApp
             BlueNarrowButton(
-              label: "Invita via WhatsApp",
-              icon: Icons.share, // ← icona compatibile
+              label: "Invita",
+              icon: Icons.share,
               onPressed: () async {
                 final message =
-                    "Ciao! Scarica Tipicooo da qui:\n$referralLink\n\nQuando ti registri, entri automaticamente nella mia rete.";
+                    "Ciao, sto usando Tipic.ooo, un servizio che permette di condividere suggerimenti su attività e servizi. Se ti registri tramite il mio link si crea il collegamento necessario affinché, quando lo utilizzerai, potremo entrambi ricevere un piccolo rimborso sulle operazioni che farai. È gratuito e può risultare utile nella quotidianità.\n\n$_referralLink";
 
-                final Uri url = Uri.parse(
-                    "https://wa.me/?text=${Uri.encodeComponent(message)}");
+                final Uri appUri = Uri.parse(
+                  "whatsapp://send?text=${Uri.encodeComponent(message)}",
+                );
+                final Uri fallbackUri = Uri.parse(
+                  "https://api.whatsapp.com/send?text=${Uri.encodeComponent(message)}",
+                );
 
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                try {
+                  final opened = await launchUrl(
+                    appUri,
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!opened) {
+                    await launchUrl(
+                      fallbackUri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                } catch (_) {
+                  await launchUrl(
+                    fallbackUri,
+                    mode: LaunchMode.externalApplication,
+                  );
                 }
               },
             ),
-
             const SizedBox(height: 20),
+            BlueNarrowButton(
+              label: "Invita via Email",
+              icon: Icons.mail_outline,
+              onPressed: () async {
+                final subject = "Invito a Tipic.ooo";
+                final body =
+                    "Ciao,\n\n"
+                    "sto usando Tipic.ooo, un servizio che permette di condividere suggerimenti su attività e servizi. "
+                    "Se ti registri tramite il mio link si crea il collegamento necessario affinché, quando lo utilizzerai, "
+                    "potremo entrambi ricevere un piccolo rimborso sulle operazioni che farai.\n\n"
+                    "Apri questo link:\n"
+                    "$_referralLink\n\n"
+                    "È gratuito e può risultare utile nella quotidianità.";
 
-            // 🔵 Bottone copia link
+                final subjectEncoded = Uri.encodeComponent(subject);
+                final bodyEncoded = Uri.encodeComponent(body);
+                final uri = Uri.parse(
+                  "mailto:?subject=$subjectEncoded&body=$bodyEncoded",
+                );
+
+                final ok = await launchUrl(
+                  uri,
+                  mode: LaunchMode.externalApplication,
+                );
+                if (!ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Nessuna app email disponibile."),
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 20),
             BlueNarrowButton(
               label: "Copia link",
               icon: Icons.copy,
               onPressed: () {
-                Clipboard.setData(ClipboardData(text: referralLink));
+                Clipboard.setData(ClipboardData(text: _referralLink));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Link copiato")),
                 );
               },
             ),
-
-            const SizedBox(height: 40),
-
-            const Text(
-              "I tuoi suggerimenti",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🔵 Lista suggerimenti (placeholder)
-            _buildSuggestionList(),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSuggestionList() {
-    // TODO: sostituire con dati reali da DynamoDB
-    final suggestions = [
-      {"email": "mario@gmail.com", "status": "inviato"},
-      {"email": "luca@gmail.com", "status": "in_attesa"},
-      {"email": "anna@gmail.com", "status": "registrato"},
-    ];
-
-    Color statusColor(String status) {
-      switch (status) {
-        case "inviato":
-          return Colors.red;
-        case "in_attesa":
-          return Colors.yellow;
-        case "registrato":
-          return Colors.green;
-        default:
-          return Colors.grey;
-      }
-    }
-
-    return Column(
-      children: suggestions.map((s) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: statusColor(s["status"]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            s["email"]!,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }

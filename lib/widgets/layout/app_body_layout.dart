@@ -36,96 +36,83 @@ class AppBodyLayout extends StatefulWidget {
   State<AppBodyLayout> createState() => _AppBodyLayoutState();
 }
 
-class _AppBodyLayoutState extends State<AppBodyLayout> {
-  /// Larghezza massima trovata tra tutti i pulsanti
-  double _maxButtonWidth = 0;
+class UniformButtonWidthController extends ChangeNotifier {
+  double _maxWidth = 0;
 
-  /// Chiavi per misurare i pulsanti
-  final Map<Key, GlobalKey> _buttonKeys = {};
+  double get maxWidth => _maxWidth;
+
+  void reportWidth(double width) {
+    if (width <= 0) return;
+    if (width > _maxWidth + 0.5) {
+      _maxWidth = width;
+      notifyListeners();
+    }
+  }
+
+  void reset() {
+    if (_maxWidth == 0) return;
+    _maxWidth = 0;
+    notifyListeners();
+  }
+}
+
+class UniformButtonWidthScope
+    extends InheritedNotifier<UniformButtonWidthController> {
+  const UniformButtonWidthScope({
+    super.key,
+    required UniformButtonWidthController controller,
+    required super.child,
+  }) : super(notifier: controller);
+
+  static UniformButtonWidthController? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<UniformButtonWidthScope>()
+        ?.notifier;
+  }
+}
+
+class _AppBodyLayoutState extends State<AppBodyLayout> {
+  final UniformButtonWidthController _widthController =
+      UniformButtonWidthController();
+  final ScrollController _scrollController = ScrollController(
+    keepScrollOffset: false,
+  );
 
   @override
   void initState() {
     super.initState();
-
-    /// Post‑frame callback sicura
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      Future.microtask(_measureButtons); // ⭐ FIX
-    });
   }
 
-  /// ------------------------------------------------------------
-  /// MISURA TUTTI I PULSANTI DELLA PAGINA
-  /// ------------------------------------------------------------
-  void _measureButtons() {
-    double maxWidth = 0;
-
-    for (final entry in _buttonKeys.entries) {
-      final key = entry.value;
-      final context = key.currentContext;
-
-      if (context == null) continue;
-
-      final renderBox = context.findRenderObject() as RenderBox?;
-
-      /// ⭐ FIX: evita crash se il widget non ha ancora una size
-      if (renderBox == null || !renderBox.hasSize) continue;
-
-      final width = renderBox.size.width;
-      if (width > maxWidth) maxWidth = width;
-    }
-
-    if (maxWidth != _maxButtonWidth) {
-      setState(() {
-        _maxButtonWidth = maxWidth;
-      });
-    }
+  @override
+  void didUpdateWidget(covariant AppBodyLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
   }
 
-  /// ------------------------------------------------------------
-  /// RICONOSCE SE UN WIDGET È UN PULSANTE
-  /// ------------------------------------------------------------
-  bool _isButton(Widget w) {
-    return w.runtimeType.toString().contains("Button");
-  }
-
-  /// ------------------------------------------------------------
-  /// WRAP AUTOMATICO DEI PULSANTI CON GLOBALKEY
-  /// ------------------------------------------------------------
-  Widget _wrapForMeasurement(Widget child) {
-    if (!_isButton(child)) return child;
-
-    final key = GlobalKey();
-    _buttonKeys[child.key ?? UniqueKey()] = key;
-
-    return Container(
-      key: key,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: _maxButtonWidth > 0 ? _maxButtonWidth : 0,
-        ),
-        child: child,
-      ),
-    );
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _widthController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: widget.maxContentWidth,
-          ),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-
-            /// Applichiamo spacing + wrapping pulsanti
-            children: _buildSpacedChildren(),
+    return UniformButtonWidthScope(
+      controller: _widthController,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        primary: false,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: widget.maxContentWidth,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: _buildSpacedChildren(),
+            ),
           ),
         ),
       ),
@@ -139,7 +126,7 @@ class _AppBodyLayoutState extends State<AppBodyLayout> {
     final spaced = <Widget>[];
 
     for (int i = 0; i < widget.children.length; i++) {
-      spaced.add(_wrapForMeasurement(widget.children[i]));
+      spaced.add(widget.children[i]);
 
       if (i < widget.children.length - 1) {
         spaced.add(SizedBox(height: widget.verticalSpacing));

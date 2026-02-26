@@ -37,6 +37,22 @@ class HivePhotosController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ⭐ Rimuovi foto per indice
+  void removeAt(int index) {
+    if (index < 0 || index >= photos.length) return;
+    photos.removeAt(index);
+    _save();
+    notifyListeners();
+  }
+
+  // ⭐ Sostituisci foto per indice
+  void replaceAt(int index, String path) {
+    if (index < 0 || index >= photos.length) return;
+    photos[index] = path;
+    _save();
+    notifyListeners();
+  }
+
   // ⭐ Numero foto
   int get count => photos.length;
 

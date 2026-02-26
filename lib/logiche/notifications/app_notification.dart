@@ -4,6 +4,7 @@ class AppNotification {
   final String message;
   final DateTime timestamp;
   bool read;
+  final String? action;
 
   AppNotification({
     required this.id,
@@ -11,6 +12,7 @@ class AppNotification {
     required this.message,
     required this.timestamp,
     this.read = false,
+    this.action,
   });
 
   // ⭐ Per salvataggio su Hive
@@ -21,6 +23,7 @@ class AppNotification {
       'message': message,
       'timestamp': timestamp.toIso8601String(),
       'read': read,
+      'action': action,
     };
   }
 
@@ -32,6 +35,7 @@ class AppNotification {
       message: map['message'] as String,
       timestamp: DateTime.parse(map['timestamp'] as String),
       read: (map['read'] as bool?) ?? false,
+      action: map['action'] as String?,
     );
   }
 

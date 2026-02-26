@@ -1,4 +1,7 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
+import 'package:tipicooo/logiche/affiliate/affiliate_activity_service.dart';
+import 'package:tipicooo/logiche/auth/auth_state.dart';
 import 'package:tipicooo/widgets/base_page.dart';
 import 'package:tipicooo/widgets/custom_buttons.dart';
 
@@ -82,6 +85,13 @@ class _SuggestActivityPageState extends State<SuggestActivityPage> {
       isValidDescription(descriptionController.text);
 
   Future<void> submitSuggestion() async {
+    if (!AuthState.isUserLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Accedi per inviare un suggerimento.")),
+      );
+      return;
+    }
+
     if (!isFormValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Compila correttamente tutti i campi")),
@@ -91,19 +101,31 @@ class _SuggestActivityPageState extends State<SuggestActivityPage> {
 
     setState(() => isSending = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await AffiliateActivityService.addLead(
+        activityName: activityNameController.text,
+        referente: referenteController.text,
+        activityEmail: activityEmailController.text,
+        description: descriptionController.text,
+      );
+      if (!mounted) return;
+      setState(() => isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Suggerimento salvato.")),
+      );
 
-    setState(() => isSending = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Suggerimento inviato!")),
-    );
-
-    activityNameController.clear();
-    referenteController.clear();
-    activityEmailController.clear();
-    descriptionController.clear();
-    setState(() {});
+      activityNameController.clear();
+      referenteController.clear();
+      activityEmailController.clear();
+      descriptionController.clear();
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Errore invio suggerimento.")),
+      );
+    }
   }
 
   Widget buildInputBox({
